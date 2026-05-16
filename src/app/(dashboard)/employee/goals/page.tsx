@@ -4,6 +4,7 @@ import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { redirect } from "next/navigation";
 import { GoalFormClient } from "./GoalFormClient";
+import { getFinancialYear, getFinancialQuarter } from "@/lib/utils";
 
 export default async function GoalsPage() {
   const user = await getCurrentUser();
@@ -11,8 +12,8 @@ export default async function GoalsPage() {
 
   await connectToDatabase();
 
-  const year = new Date().getFullYear();
-  const quarter = `Q${Math.floor(new Date().getMonth() / 3) + 1}`;
+  const year = getFinancialYear();
+  const quarter = getFinancialQuarter();
 
   let sheet = await GoalSheet.findOne({ employeeId: user.id, year, quarter }).lean();
 
@@ -30,22 +31,9 @@ export default async function GoalsPage() {
   // Fetch linked goals
   const goals = await Goal.find({ goalSheetId: sheet._id }).lean();
 
-  // Convert ObjectIds to strings
-  const formattedSheet = {
-    ...sheet,
-    _id: sheet._id.toString(),
-    employeeId: sheet.employeeId.toString(),
-  };
-
-  const formattedGoals = goals.map((g: any) => ({
-    ...g,
-    _id: g._id.toString(),
-    employeeId: g.employeeId.toString(),
-    goalSheetId: g.goalSheetId.toString(),
-    sharedGoalId: g.sharedGoalId?.toString(),
-    createdBy: g.createdBy.toString(),
-    updatedBy: g.updatedBy.toString(),
-  }));
+  // Safely serialize Mongoose documents to plain objects for Client Component
+  const formattedSheet = JSON.parse(JSON.stringify(sheet));
+  const formattedGoals = JSON.parse(JSON.stringify(goals));
 
   return (
     <div className="space-y-6">

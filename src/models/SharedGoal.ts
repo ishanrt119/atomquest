@@ -4,7 +4,7 @@ export interface ISharedGoal extends Document {
   title: string;
   description?: string;
   thrustArea?: string;
-  target: number;
+  targetValue: number;
   assignedEmployees: mongoose.Types.ObjectId[];
   primaryOwnerId: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
@@ -17,7 +17,7 @@ const SharedGoalSchema = new Schema<ISharedGoal>(
     title: { type: String, required: true },
     description: { type: String },
     thrustArea: { type: String },
-    target: { type: Number, required: true },
+    targetValue: { type: Number, required: true },
     assignedEmployees: [{ type: Schema.Types.ObjectId, ref: "User" }],
     primaryOwnerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

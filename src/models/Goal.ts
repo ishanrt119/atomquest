@@ -6,7 +6,8 @@ export interface IGoal extends Document {
   thrustArea?: string;
   uomType: "numeric" | "percentage" | "timeline" | "zero";
   measurementDirection: "min" | "max";
-  target: number;
+  targetValue?: number;
+  targetDate?: Date;
   weightage: number;
   status: "not_started" | "on_track" | "completed";
   locked: boolean;
@@ -33,9 +34,21 @@ const GoalSchema = new Schema<IGoal>(
     measurementDirection: {
       type: String,
       enum: ["min", "max"],
-      default: "max"
+      required: true,
+      default: "max",
     },
-    target: { type: Number, required: true },
+    targetValue: {
+      type: Number,
+      required: function(this: any) {
+        return this.uomType !== "timeline";
+      },
+    },
+    targetDate: {
+      type: Date,
+      required: function(this: any) {
+        return this.uomType === "timeline";
+      },
+    },
     weightage: { 
       type: Number, 
       required: true, 

@@ -6,6 +6,7 @@ import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { SharedGoal } from "@/models/SharedGoal";
 import { AuditLog } from "@/models/AuditLog";
+import { getFinancialYear, getFinancialQuarter } from "@/lib/utils";
 
 export default async function EmployeeDashboard() {
   const user = await getCurrentUser();
@@ -17,8 +18,8 @@ export default async function EmployeeDashboard() {
   await connectToDatabase();
 
   const firstName = user.name.split(" ")[0] || "Employee";
-  const year = new Date().getFullYear();
-  const quarter = `Q${Math.floor(new Date().getMonth() / 3) + 1}`;
+  const year = getFinancialYear();
+  const quarter = getFinancialQuarter();
 
   // Fetch current Goal Sheet
   const sheetRaw = await GoalSheet.findOne({ employeeId: user.id, year, quarter }).lean();

@@ -66,6 +66,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Maximum 8 goals allowed." }, { status: 400 });
     }
 
+    // Validate custom uom constraints
+    for (const g of goals) {
+      if (g.uomType === "percentage" && (g.targetValue < 0 || g.targetValue > 100)) {
+        return NextResponse.json({ error: `Goal "${g.title || 'Untitled'}": Target must be between 0 and 100 for percentages.` }, { status: 400 });
+      }
+      if (g.uomType === "zero" && g.targetValue !== 0) {
+        return NextResponse.json({ error: `Goal "${g.title || 'Untitled'}": Target must be exactly 0 for zero defects.` }, { status: 400 });
+      }
+    }
+
     // Bulk Operation
     // 1. Delete goals that are no longer in the array
     const goalIdsToKeep = goals.map(g => g._id).filter(id => id); // Extract existing IDs
@@ -81,20 +91,24 @@ export async function PUT(req: NextRequest) {
           updatedBy: session.userId
         };
 
-        // If not a shared goal, allow full edits
         if (!g.isSharedGoal) {
           updateData.title = g.title;
           updateData.thrustArea = g.thrustArea;
           updateData.uomType = g.uomType;
           updateData.measurementDirection = g.measurementDirection;
-          updateData.target = g.target;
+          updateData.targetValue = g.targetValue;
+          if (g.targetDate) {
+            updateData.targetDate = g.targetDate;
+          } else {
+            updateData.$unset = { targetDate: 1 };
+          }
         }
 
         return Goal.findByIdAndUpdate(g._id, { $set: updateData }, { new: true });
       } else {
-        // Create new
         return Goal.create({
           ...g,
+          targetDate: g.targetDate || undefined,
           goalSheetId,
           employeeId: sheet.employeeId,
           createdBy: session.userId,

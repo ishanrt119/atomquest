@@ -5,6 +5,7 @@ import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { verifyJWT } from "@/lib/auth";
 import { createAuditLog } from "@/services/audit";
+import { getFinancialYear, getFinancialQuarter } from "@/lib/utils";
 
 async function getSession(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
@@ -73,8 +74,8 @@ export async function POST(req: NextRequest) {
     // Cascade: Create matching Goal entries for assigned employees
     // Note: We assign them an initial weightage of 10. The employee must adjust their own sheet to equal 100%.
     if (assignedEmployees && assignedEmployees.length > 0) {
-      const year = new Date().getFullYear();
-      const quarter = `Q${Math.floor(new Date().getMonth() / 3) + 1}`; // Current quarter
+      const year = getFinancialYear();
+      const quarter = getFinancialQuarter(); // Current quarter
 
       for (const empId of assignedEmployees) {
         // Find their active goal sheet or create a draft one

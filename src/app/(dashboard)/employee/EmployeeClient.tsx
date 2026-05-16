@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 
 export function EmployeeClient({ 
   firstName, 
@@ -44,6 +44,16 @@ export function EmployeeClient({
     if (act.action === "locked") return "Goals have been approved and locked.";
     if (act.action === "unlocked") return "Goals have been unlocked.";
     return "Performed an action.";
+  };
+
+  const renderTarget = (g: any) => {
+    if (g.uomType === "timeline" && g.targetDate) {
+      return format(new Date(g.targetDate), "MMM d, yyyy");
+    }
+    if (g.uomType === "percentage") {
+      return `${g.targetValue ?? 0}%`;
+    }
+    return g.targetValue ?? 0;
   };
 
   return (
@@ -111,7 +121,7 @@ export function EmployeeClient({
                           <h4 className="font-semibold text-base">{goal.title}</h4>
                           {goal.isSharedGoal && <Badge variant="outline" className="text-[10px] text-blue-500 border-blue-500">Shared</Badge>}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">Weightage: {goal.weightage}% | Target: {goal.target}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Weightage: {goal.weightage}% | Target: {renderTarget(goal)}</p>
                       </div>
                       <Badge variant={goal.status === 'completed' ? 'default' : goal.status === 'not_started' ? 'secondary' : 'outline'}>
                         {goal.status.replace("_", " ")}
@@ -144,7 +154,7 @@ export function EmployeeClient({
                       </div>
                       <div>
                         <h5 className="font-medium">{sg.title}</h5>
-                        <p className="text-sm text-muted-foreground">Target: {sg.target}</p>
+                        <p className="text-sm text-muted-foreground">Target: {renderTarget(sg)}</p>
                       </div>
                     </div>
                   </div>
