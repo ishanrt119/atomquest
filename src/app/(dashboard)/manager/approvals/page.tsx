@@ -12,8 +12,15 @@ export default async function ManagerApprovalsPage() {
 
   await connectToDatabase();
 
-  // Fetch all submitted goal sheets
-  const submittedSheets = await GoalSheet.find({ status: "submitted" })
+  // Get team members
+  const employees = await User.find({ managerId: user.id }).select("_id").lean();
+  const employeeIds = employees.map(emp => emp._id);
+
+  // Fetch submitted goal sheets only for team members
+  const submittedSheets = await GoalSheet.find({
+    status: "submitted",
+    employeeId: { $in: employeeIds }
+  })
     .populate("employeeId", "name email designation")
     .sort({ updatedAt: -1 })
     .lean();

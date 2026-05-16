@@ -2,16 +2,12 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
-const data = [
-  { name: "Revenue Growth", value: 400 },
-  { name: "Product Delivery", value: 300 },
-  { name: "Customer Success", value: 300 },
-  { name: "Internal Process", value: 200 },
-];
-
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
-export function DistributionChart() {
+export function DistributionChart({ data }: { data: { name: string; value: number }[] }) {
+  if (!data || data.length === 0) {
+    return <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground text-sm">No data available</div>;
+  }
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

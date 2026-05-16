@@ -26,9 +26,8 @@ const NAV_CONFIG = {
   ],
   manager: [
     { name: "Dashboard", href: "/manager", icon: LayoutDashboard },
-    { name: "Team Goals", href: "/manager/team-goals", icon: Target },
     { name: "Approvals", href: "/manager/approvals", icon: CheckCircle2 },
-    { name: "Check-ins", href: "/manager/check-ins", icon: Briefcase },
+    { name: "Shared Goals", href: "/manager/shared-goals", icon: Target },
     { name: "Team Analytics", href: "/manager/analytics", icon: BarChart3 },
   ],
   admin: [

@@ -64,7 +64,7 @@ export function AdminClient({ activeEmployeesCount }: { activeEmployeesCount: nu
                 <TabsTrigger value="departments">Department Comparison</TabsTrigger>
               </TabsList>
               <TabsContent value="trends" className="space-y-4">
-                <ProgressChart />
+                <ProgressChart data={[{ name: "Week 1", progress: 10 }, { name: "Week 2", progress: 25 }, { name: "Week 3", progress: 45 }, { name: "Week 4", progress: 50 }, { name: "Week 5", progress: 65 }, { name: "Week 6", progress: 72 }, { name: "Week 7", progress: 85 }, { name: "Week 8", progress: 92 }]} />
               </TabsContent>
               <TabsContent value="departments">
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
@@ -72,6 +72,10 @@ export function AdminClient({ activeEmployeesCount }: { activeEmployeesCount: nu
                 </div>
               </TabsContent>
             </Tabs>
+          </DashboardCard>
+
+          <DashboardCard title="Company Goal Distribution">
+            <DistributionChart data={[{ name: "Revenue Growth", value: 400 }, { name: "Product Delivery", value: 300 }, { name: "Customer Success", value: 300 }, { name: "Internal Process", value: 200 }]} />
           </DashboardCard>
 
           {/* Department Performance Table */}

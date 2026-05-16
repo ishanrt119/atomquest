@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { format } from "date-fns";
 
 export function ApprovalQueueClient({ initialSheets }: { initialSheets: any[] }) {
   const [sheets, setSheets] = useState(initialSheets);
@@ -25,12 +26,12 @@ export function ApprovalQueueClient({ initialSheets }: { initialSheets: any[] })
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleGoalChange = (goalId: string, field: string, value: string) => {
+  const handleGoalChange = (goalId: string, field: string, value: any) => {
     setEditedGoals(prev => ({
       ...prev,
       [goalId]: {
         ...prev[goalId],
-        [field]: Number(value)
+        [field]: field === "targetDate" ? new Date(value) : Number(value)
       }
     }));
   };
@@ -175,14 +176,34 @@ export function ApprovalQueueClient({ initialSheets }: { initialSheets: any[] })
                             </div>
                             
                             <div className="md:col-span-3 space-y-1">
-                              <label className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Target ({goal.measurementDirection})</label>
-                              <Input 
-                                type="number" 
-                                className="h-8 text-sm" 
-                                value={currentGoal.target} 
-                                onChange={(e) => handleGoalChange(goal._id, "target", e.target.value)}
-                                disabled={goal.isSharedGoal}
-                              />
+                              <label className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                                Target ({goal.measurementDirection})
+                              </label>
+                              {goal.uomType === "timeline" ? (
+                                <Input 
+                                  type="date" 
+                                  className="h-8 text-sm" 
+                                  value={currentGoal.targetDate ? format(new Date(currentGoal.targetDate), "yyyy-MM-dd") : ""} 
+                                  onChange={(e) => handleGoalChange(goal._id, "targetDate", e.target.value)}
+                                  disabled={goal.isSharedGoal}
+                                />
+                              ) : goal.uomType === "zero" ? (
+                                <Input 
+                                  type="number" 
+                                  className="h-8 text-sm" 
+                                  value={0} 
+                                  readOnly
+                                  disabled
+                                />
+                              ) : (
+                                <Input 
+                                  type="number" 
+                                  className="h-8 text-sm" 
+                                  value={currentGoal.targetValue ?? ""} 
+                                  onChange={(e) => handleGoalChange(goal._id, "targetValue", e.target.value)}
+                                  disabled={goal.isSharedGoal}
+                                />
+                              )}
                             </div>
                             
                             <div className="md:col-span-3 space-y-1">

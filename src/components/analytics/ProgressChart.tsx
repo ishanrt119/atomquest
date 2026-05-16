@@ -2,18 +2,10 @@
 
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-const data = [
-  { name: "Week 1", progress: 10 },
-  { name: "Week 2", progress: 25 },
-  { name: "Week 3", progress: 45 },
-  { name: "Week 4", progress: 50 },
-  { name: "Week 5", progress: 65 },
-  { name: "Week 6", progress: 72 },
-  { name: "Week 7", progress: 85 },
-  { name: "Week 8", progress: 92 },
-];
-
-export function ProgressChart() {
+export function ProgressChart({ data }: { data: { name: string; progress: number }[] }) {
+  if (!data || data.length === 0) {
+    return <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground text-sm">No data available</div>;
+  }
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

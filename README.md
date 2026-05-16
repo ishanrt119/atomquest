@@ -7,7 +7,9 @@ AtomQuest is a premium, enterprise-grade Goal Setting and Tracking Portal design
 This repository contains the foundation for the AtomQuest portal. It is built to deliver a highly user-friendly, responsive, and minimalist experience reminiscent of modern SaaS platforms (like Notion, Linear, and Stripe).
 
 ### Features
-- **[Phase 1] Goal Creation & Approval System (COMPLETED)**
+- **[Phase 1] Goal Creation & Employee Dashboard (COMPLETED)**
+- **[Phase 1] Dynamic Manager Dashboard & Approval System (COMPLETED)**
+- **[Phase 1] Real-time Shared Goals Management (COMPLETED)**
 - [Phase 2] Quarterly Check-ins & Continuous Feedback
 - [Phase 3] Advanced Analytics & PDF Exporting
 - [Phase 4] System-wide Notifications & Email Alerts
@@ -94,11 +96,11 @@ graph TD
 ## Database Schema Overview
 The architecture implements the following robust Mongoose schemas:
 - **User**: Captures identity, roles (employee, manager, admin), and relationships.
-- **Goal**: Core entity tracking targets, thrust areas, and quarterly weightings.
-- **GoalSheet**: Container linking multiple goals to a specific quarter/year for an employee.
+- **Goal**: Core entity tracking targets, thrust areas, and quarterly weightings. Supports dynamic Unit of Measurement (`numeric`, `percentage`, `timeline`, `zero`) via `targetValue` and `targetDate`.
+- **GoalSheet**: Container linking multiple goals to a specific quarter/year for an employee. Contains strict `status` and `locked` control layers for the approval workflow.
 - **CheckIn**: Periodic updates on active goals with manager review hooks.
-- **SharedGoal**: Junction allowing shared progress on cross-departmental tasks.
-- **AuditLog**: Immutable historical tracking of all significant changes.
+- **SharedGoal**: Junction allowing shared progress on cross-departmental tasks. Fully integrated for Admin and Manager creation.
+- **AuditLog**: Immutable historical tracking of all significant changes (Status changes, Locking, Rejections).
 - **Notification**: In-app routing for updates and reminders.
 
 ## Authentication Flow & RBAC

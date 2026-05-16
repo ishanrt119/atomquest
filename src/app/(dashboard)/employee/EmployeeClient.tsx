@@ -135,7 +135,7 @@ export function EmployeeClient({
 
           {/* Performance Insights */}
           <DashboardCard title="Quarterly Progress Trend">
-            <ProgressChart />
+            <ProgressChart data={[{ name: "Week 1", progress: 10 }, { name: "Week 2", progress: 25 }, { name: "Week 3", progress: 45 }, { name: "Week 4", progress: 50 }, { name: "Week 5", progress: 65 }, { name: "Week 6", progress: 72 }, { name: "Week 7", progress: 85 }, { name: "Week 8", progress: 92 }]} />
           </DashboardCard>
 
           {/* Shared Goals Section */}
