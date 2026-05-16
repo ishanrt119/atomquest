@@ -23,18 +23,15 @@ const NAV_CONFIG = {
   ],
   admin: [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { name: "Shared Goals", href: "/admin/shared-goals", icon: Target },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Goal Cycles", href: "/admin/cycles", icon: Target },
   ]
 };
 
-export function MobileDrawer() {
+export function MobileDrawer({ userRole }: { userRole: "employee" | "manager" | "admin" }) {
   const pathname = usePathname();
-  let currentRole: "employee" | "manager" | "admin" = "employee";
-  if (pathname.startsWith("/manager")) currentRole = "manager";
-  if (pathname.startsWith("/admin")) currentRole = "admin";
-
-  const links = NAV_CONFIG[currentRole];
+  const links = NAV_CONFIG[userRole];
 
   return (
     <Sheet>

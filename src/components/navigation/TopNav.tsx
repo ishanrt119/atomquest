@@ -13,10 +13,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { MobileDrawer } from "./MobileDrawer";
 import { useRouter } from "next/navigation";
+import { SessionUser } from "@/lib/session";
+import { MobileDrawer } from "./MobileDrawer";
 
-export function TopNav() {
+export function TopNav({ user }: { user: SessionUser }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -27,13 +28,22 @@ export function TopNav() {
       console.error("Logout failed", error);
     }
   };
+
+  // Extract initials for Avatar
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="flex h-full items-center px-4 md:px-8 gap-4 justify-between">
         
         {/* Mobile Menu Trigger */}
         <div className="md:hidden">
-          <MobileDrawer />
+          <MobileDrawer userRole={user.role} />
         </div>
 
         <div className="hidden md:flex items-center flex-1 max-w-md">
@@ -56,17 +66,16 @@ export function TopNav() {
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="relative size-9 rounded-full" />}>
               <Avatar className="size-9 border border-border">
-                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="@user" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary font-medium">{initials}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Admin User</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      admin@atomquest.com
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground truncate">
+                      {user.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>

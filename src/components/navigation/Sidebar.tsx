@@ -33,6 +33,7 @@ const NAV_CONFIG = {
   ],
   admin: [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { name: "Shared Goals", href: "/admin/shared-goals", icon: Target },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Goal Cycles", href: "/admin/cycles", icon: Target },
     { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
@@ -40,16 +41,10 @@ const NAV_CONFIG = {
   ]
 };
 
-export function Sidebar() {
+export function Sidebar({ userRole }: { userRole: "employee" | "manager" | "admin" }) {
   const pathname = usePathname();
   
-  // Determine role based on URL for demo purposes. 
-  // In a real app, this comes from a Session Provider.
-  let currentRole: "employee" | "manager" | "admin" = "employee";
-  if (pathname.startsWith("/manager")) currentRole = "manager";
-  if (pathname.startsWith("/admin")) currentRole = "admin";
-
-  const links = NAV_CONFIG[currentRole];
+  const links = NAV_CONFIG[userRole];
 
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-background/50 backdrop-blur-xl h-screen sticky top-0">
@@ -59,7 +54,7 @@ export function Sidebar() {
         </div>
         <div>
           <span className="font-semibold text-lg tracking-tight block leading-tight">AtomQuest</span>
-          <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{currentRole}</span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{userRole}</span>
         </div>
       </div>
       

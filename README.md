@@ -7,10 +7,54 @@ AtomQuest is a premium, enterprise-grade Goal Setting and Tracking Portal design
 This repository contains the foundation for the AtomQuest portal. It is built to deliver a highly user-friendly, responsive, and minimalist experience reminiscent of modern SaaS platforms (like Notion, Linear, and Stripe).
 
 ### Features
-- **Goal Creation**: Employees can seamlessly create personal and OKR-based goals.
-- **Manager Reviews**: Managers can review, approve, and align goals.
-- **Quarterly Tracking**: Easy check-ins and performance tracking.
-- **Analytics Dashboard**: Insights on organizational performance (planned).
+- **[Phase 1] Goal Creation & Approval System (COMPLETED)**
+- [Phase 2] Quarterly Check-ins & Continuous Feedback
+- [Phase 3] Advanced Analytics & PDF Exporting
+- [Phase 4] System-wide Notifications & Email Alerts
+
+---
+
+## 🏗 Phase 1 Architecture (Implemented)
+
+### 1. Goal Lifecycle Workflow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft: Employee creates goals
+    Draft --> Submitted: Employee submits (100% weightage)
+    
+    state Manager_Review {
+        Submitted --> Approved: Manager Approves
+        Submitted --> Rejected: Manager Rejects
+    }
+    
+    Rejected --> Draft: Employee modifies
+    
+    Approved --> Locked: System Auto-Locks Goals
+    Locked --> [*]
+    
+    Locked --> Draft: Admin Force Unlocks (Audit Logged)
+```
+
+### 2. Shared Goals Cascading Engine
+
+```mermaid
+graph TD
+    A[Admin/Manager] -->|Creates Shared Goal| B(SharedGoal Entity)
+    B -->|Cascades| C[Goal: Employee 1]
+    B -->|Cascades| D[Goal: Employee 2]
+    B -->|Cascades| E[Goal: Employee N]
+    
+    F[Primary Owner] -->|Updates Target/Achievement| B
+    B -.->|Auto Syncs| C
+    B -.->|Auto Syncs| D
+    B -.->|Auto Syncs| E
+```
+
+---
+
+## 🔒 Security & Middleware
+
 - **Role-based Authentication**: Secure access for Employees, Managers, and Admins.
 
 ## Tech Stack
