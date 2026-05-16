@@ -21,8 +21,16 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Auto-calculate progress percentage
-  const progressPercentage = Math.min(100, Math.max(0, Math.round((achievement / goal.targetValue) * 100))) || 0;
+  // Use server-persisted standardized fields for display
+  const rawProgress = goal.rawProgressPercentage ?? 0;
+  const displayProgress = goal.displayProgressPercentage ?? 0;
+  const statusLabel = goal.progressStatusLabel ?? `${rawProgress}%`;
+
+  // Live preview: calculate client-side for instant feedback while editing
+  const liveRaw = goal.targetValue > 0
+    ? Math.round((achievement / goal.targetValue) * 100)
+    : 0;
+  const liveDisplay = Math.min(100, liveRaw);
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -35,7 +43,6 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentAchievement: Number(achievement),
-          progressPercentage,
           status
         })
       });
@@ -56,10 +63,22 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
     setError("");
     setSuccess("");
     try {
-      const res = await fetch(`/api/shared-goal-sync/${goal._id}`, { method: "POST" });
+      const res = await fetch(`/api/shared-goal-sync/${goal._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primaryGoalId: goal.primaryOwnerId._id,
+          currentAchievement: achievement,
+          rawProgressPercentage: liveRaw,
+          displayProgressPercentage: liveDisplay,
+          progressStatusLabel: liveRaw > 100 ? `Exceeded Target (${liveRaw}%)` : liveRaw === 100 ? "Target Completed" : `${liveRaw}% Achieved`,
+          status,
+          quarter: "Q1",
+        })
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess(`Forced sync successful. Updated ${data.data.syncedGoalsCount} linked employee goal sheets.`);
+      setSuccess(`Forced sync successful. Updated ${data.data.syncedCount ?? 0} linked employee goal sheets.`);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -80,7 +99,7 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
           <p className="text-muted-foreground">{goal.description}</p>
         </div>
         <div className="text-right">
-          <Badge variant={status === "completed" ? "default" : status === "on_track" ? "secondary" : "outline"} className="uppercase">
+          <Badge variant={status === "completed" || status === "exceeded" ? "default" : status === "on_track" ? "secondary" : "outline"} className="uppercase">
             {status.replace("_", " ")}
           </Badge>
           <p className="text-xs text-muted-foreground mt-2">
@@ -106,11 +125,18 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
             </div>
 
             <div className="space-y-2 mb-6">
-              <div className="flex justify-between text-sm font-medium">
-                <span>Progress</span>
-                <span>{goal.progressPercentage ?? 0}%</span>
+              <div className="flex justify-between text-sm font-medium items-center">
+                <span className="flex items-center gap-2">
+                  Progress
+                  {rawProgress > 100 && (
+                    <Badge className="bg-green-600 text-white text-[10px] px-1.5 py-0">
+                      Exceeded
+                    </Badge>
+                  )}
+                </span>
+                <span className="font-bold">{statusLabel}</span>
               </div>
-              <Progress value={goal.progressPercentage ?? 0} className="h-3" />
+              <Progress value={displayProgress} className="h-3" />
             </div>
 
             {canEdit && (
@@ -137,9 +163,33 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
                       onChange={e => setStatus(e.target.value)}
                     >
                       <option value="not_started">Not Started</option>
+                      <option value="at_risk">At Risk</option>
                       <option value="on_track">On Track</option>
                       <option value="completed">Completed</option>
+                      <option value="exceeded">Exceeded Target</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Live preview */}
+                <div className="p-3 bg-card border rounded-lg space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Live Preview</span>
+                    <span className="font-bold">{liveRaw}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        liveDisplay >= 100
+                          ? "bg-primary"
+                          : liveDisplay >= 60
+                          ? "bg-emerald-500"
+                          : liveDisplay >= 30
+                          ? "bg-amber-500"
+                          : "bg-rose-500"
+                      }`}
+                      style={{ width: `${liveDisplay}%` }}
+                    />
                   </div>
                 </div>
 

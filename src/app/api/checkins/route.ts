@@ -5,6 +5,7 @@ import { Goal } from "@/models/Goal";
 import { GoalSheet } from "@/models/GoalSheet";
 import { User } from "@/models/User";
 import { verifyJWT } from "@/lib/auth";
+import { calculateProgress, deriveStatusFromProgress } from "@/services/sync/progressCalculationService";
 
 // GET active quarter check-ins for logged-in employee
 export async function GET(req: NextRequest) {
@@ -21,7 +22,6 @@ export async function GET(req: NextRequest) {
     await connectToDatabase();
 
     // Only fetch goals from approved/locked goal sheets for the current financial year
-    const year = new Date().getFullYear();
     const approvedSheets = await GoalSheet.find({
       employeeId,
       status: { $in: ["approved"] },
@@ -52,11 +52,22 @@ export async function GET(req: NextRequest) {
     }).populate("goalId").lean();
 
     // Build virtual check-ins for goals without one
+    // CRITICAL: Use standardized progress fields, NOT legacy progressPercentage
     const virtualCheckins = goals.map((goal: any) => {
       const existing = existingCheckins.find(
         (c: any) => c.goalId?._id?.toString() === goal._id.toString()
       );
       if (existing) return existing;
+
+      // Calculate progress from goal's current achievement for virtual checkins
+      const progress = calculateProgress(
+        goal.uomType,
+        goal.measurementDirection,
+        goal.targetValue,
+        goal.currentAchievement ?? null,
+        goal.targetDate,
+        null
+      );
 
       return {
         _id: `virtual_${goal._id}`,
@@ -67,8 +78,10 @@ export async function GET(req: NextRequest) {
         plannedTargetDate: goal.targetDate,
         actualAchievementValue: goal.currentAchievement ?? null,
         actualAchievementDate: null,
-        progressPercentage: goal.progressPercentage ?? 0,
-        status: goal.status ?? "not_started",
+        rawProgressPercentage: goal.rawProgressPercentage ?? progress.rawProgressPercentage,
+        displayProgressPercentage: goal.displayProgressPercentage ?? progress.displayProgressPercentage,
+        progressStatusLabel: goal.progressStatusLabel ?? progress.progressStatusLabel,
+        status: goal.status ?? deriveStatusFromProgress(progress.rawProgressPercentage),
         employeeComment: "",
         checkinSubmitted: false,
         managerReviewed: false,
@@ -82,7 +95,7 @@ export async function GET(req: NextRequest) {
 }
 
 
-// UPSERT check-ins
+// UPSERT check-ins (batch save)
 export async function PUT(req: NextRequest) {
   try {
     const token = req.cookies.get("auth_token")?.value;
@@ -101,32 +114,46 @@ export async function PUT(req: NextRequest) {
     const updatedCheckins = [];
 
     for (const c of checkins) {
-      // Is virtual?
       const isVirtual = c._id && c._id.toString().startsWith("virtual_");
+
+      // Recalculate progress server-side for consistency
+      const goalDoc = typeof c.goalId === "object" ? c.goalId : await Goal.findById(c.goalId).lean();
+      const progress = calculateProgress(
+        goalDoc?.uomType || "numeric",
+        goalDoc?.measurementDirection || "max",
+        goalDoc?.targetValue,
+        c.actualAchievementValue,
+        goalDoc?.targetDate,
+        c.actualAchievementDate
+      );
+
+      const checkinFields = {
+        actualAchievementValue: c.actualAchievementValue,
+        actualAchievementDate: c.actualAchievementDate,
+        rawProgressPercentage: progress.rawProgressPercentage,
+        displayProgressPercentage: progress.displayProgressPercentage,
+        progressStatusLabel: progress.progressStatusLabel,
+        status: c.status || deriveStatusFromProgress(progress.rawProgressPercentage),
+        employeeComment: c.employeeComment,
+      };
 
       let checkinDoc;
       if (isVirtual) {
         checkinDoc = await CheckIn.create({
           goalId: c.goalId._id || c.goalId,
           employeeId: session.userId,
-          managerId: employee.managerId || employee._id, // fallback
+          managerId: employee.managerId || employee._id,
           quarter,
           plannedTargetValue: c.plannedTargetValue,
           plannedTargetDate: c.plannedTargetDate,
-          actualAchievementValue: c.actualAchievementValue,
-          actualAchievementDate: c.actualAchievementDate,
-          progressPercentage: c.progressPercentage,
-          status: c.status,
-          employeeComment: c.employeeComment,
+          ...checkinFields,
         });
       } else {
-        checkinDoc = await CheckIn.findByIdAndUpdate(c._id, {
-          actualAchievementValue: c.actualAchievementValue,
-          actualAchievementDate: c.actualAchievementDate,
-          progressPercentage: c.progressPercentage,
-          status: c.status,
-          employeeComment: c.employeeComment,
-        }, { new: true });
+        checkinDoc = await CheckIn.findByIdAndUpdate(
+          c._id,
+          { $set: checkinFields },
+          { new: true }
+        );
       }
       updatedCheckins.push(checkinDoc);
     }

@@ -31,10 +31,14 @@ export function EmployeeClient({
   
   // Calculate dynamic metrics
   const totalGoals = goals.length;
-  const completedGoals = goals.filter(g => g.status === "completed").length;
-  const inProgressGoals = goals.filter(g => g.status === "on_track").length;
+  const completedGoals = goals.filter(g => g.status === "completed" || g.status === "exceeded").length;
+  const inProgressGoals = goals.filter(g => g.status === "on_track" || g.status === "at_risk").length;
   
-  const completionPercentage = totalGoals === 0 ? 0 : Math.round((completedGoals / totalGoals) * 100);
+  // Weighted average progress using standardized fields
+  const totalWeightage = goals.reduce((sum, g) => sum + (g.weightage || 0), 0);
+  const completionPercentage = totalWeightage === 0 ? 0 : Math.round(
+    goals.reduce((sum, g) => sum + ((g.displayProgressPercentage ?? 0) * (g.weightage || 0)), 0) / totalWeightage
+  );
 
   // Format activities
   const formatActivityText = (act: any) => {

@@ -3,35 +3,69 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { SharedGoal } from "@/models/SharedGoal";
 import { verifyJWT } from "@/lib/auth";
 import { createAuditLog } from "@/services/audit";
+import {
+  calculateProgress,
+  deriveStatusFromProgress,
+} from "@/services/sync/progressCalculationService";
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const token = req.cookies.get("auth_token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const session = await verifyJWT(token);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
     const body = await req.json();
-    const { currentAchievement, progressPercentage, status } = body;
+    const { currentAchievement, status: clientStatus } = body;
 
     await connectToDatabase();
 
     const sharedGoal = await SharedGoal.findById(id);
-    if (!sharedGoal) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!sharedGoal)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (sharedGoal.primaryOwnerId.toString() !== session.userId && session.role !== "admin") {
-      return NextResponse.json({ error: "Only primary owner can update achievement" }, { status: 403 });
+    if (
+      sharedGoal.primaryOwnerId.toString() !== session.userId &&
+      session.role !== "admin"
+    ) {
+      return NextResponse.json(
+        { error: "Only primary owner can update achievement" },
+        { status: 403 }
+      );
     }
+
+    // Server-side progress calculation (single source of truth)
+    const progress = calculateProgress(
+      sharedGoal.uomType,
+      sharedGoal.measurementDirection,
+      sharedGoal.targetValue,
+      currentAchievement,
+      sharedGoal.targetDate,
+      null
+    );
+
+    const status =
+      clientStatus || deriveStatusFromProgress(progress.rawProgressPercentage);
 
     const oldValues = {
       currentAchievement: sharedGoal.currentAchievement,
-      progressPercentage: sharedGoal.progressPercentage,
-      status: sharedGoal.status
+      rawProgressPercentage: sharedGoal.rawProgressPercentage,
+      displayProgressPercentage: sharedGoal.displayProgressPercentage,
+      progressStatusLabel: sharedGoal.progressStatusLabel,
+      status: sharedGoal.status,
     };
 
+    // Persist standardized fields
     sharedGoal.currentAchievement = currentAchievement;
-    sharedGoal.progressPercentage = progressPercentage;
+    sharedGoal.rawProgressPercentage = progress.rawProgressPercentage;
+    sharedGoal.displayProgressPercentage = progress.displayProgressPercentage;
+    sharedGoal.progressStatusLabel = progress.progressStatusLabel;
     sharedGoal.status = status;
     await sharedGoal.save();
 
@@ -41,24 +75,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       action: "updated",
       changedBy: session.userId,
       oldValue: oldValues,
-      newValue: { currentAchievement, progressPercentage, status },
+      newValue: {
+        currentAchievement,
+        rawProgressPercentage: progress.rawProgressPercentage,
+        displayProgressPercentage: progress.displayProgressPercentage,
+        progressStatusLabel: progress.progressStatusLabel,
+        status,
+      },
     });
 
     // Trigger sync engine
     const host = req.headers.get("host");
-    const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+    const protocol =
+      process.env.NODE_ENV === "development" ? "http" : "https";
 
-    // Fire and forget the sync to prevent blocking the UI
     fetch(`${protocol}://${host}/api/shared-goal-sync/${id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: `auth_token=${token}` // Pass token for auth
-      }
+        Cookie: `auth_token=${token}`,
+      },
+      body: JSON.stringify({
+        primaryGoalId: sharedGoal.primaryOwnerId,
+        currentAchievement,
+        rawProgressPercentage: progress.rawProgressPercentage,
+        displayProgressPercentage: progress.displayProgressPercentage,
+        progressStatusLabel: progress.progressStatusLabel,
+        status,
+        quarter: body.quarter || "Q1",
+      }),
     }).catch(console.error);
 
     return NextResponse.json({ success: true, data: sharedGoal });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }

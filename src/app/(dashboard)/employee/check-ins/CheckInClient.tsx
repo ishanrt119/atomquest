@@ -39,6 +39,7 @@ interface Checkin {
   actualAchievementDate?: string | null;
   rawProgressPercentage: number;
   displayProgressPercentage: number;
+  progressStatusLabel: string;
   status: "not_started" | "at_risk" | "on_track" | "completed" | "exceeded";
   employeeComment?: string;
   managerComment?: string;
@@ -46,7 +47,7 @@ interface Checkin {
   managerReviewed: boolean;
 }
 
-// ─── Progress Calculation (client-side, mirrors server) ─────────────────────
+// ─── Progress Calculation (client-side, mirrors server exactly) ──────────────
 function calcProgress(
   uomType: string,
   measurementDirection: string,
@@ -54,7 +55,7 @@ function calcProgress(
   actualValue: number | null | undefined,
   targetDate: string | undefined,
   actualDate: string | null | undefined
-): { rawProgressPercentage: number; displayProgressPercentage: number } {
+): { rawProgressPercentage: number; displayProgressPercentage: number; progressStatusLabel: string } {
   let raw = 0;
 
   if (uomType === "timeline") {
@@ -74,18 +75,33 @@ function calcProgress(
   } else {
     const tv = Number(targetValue);
     const av = Number(actualValue);
-    if (tv && !isNaN(av)) {
-      if (measurementDirection === "min") {
-        raw = av === 0 ? 100 : Math.round((tv / av) * 100);
-      } else {
-        raw = Math.round((av / tv) * 100);
-      }
+
+    if (isNaN(tv) || isNaN(av)) {
+      raw = 0;
+    } else if (tv === 0 && av === 0) {
+      raw = 100;
+    } else if (tv === 0) {
+      raw = 0; // divide-by-zero protection
+    } else if (measurementDirection === "max") {
+      // MAX = Higher is better: actual / target × 100
+      raw = Math.round((av / tv) * 100);
+    } else {
+      // MIN = Lower is better: target / actual × 100
+      if (av === 0) raw = 100;
+      else raw = Math.round((tv / av) * 100);
     }
   }
 
+  let label: string;
+  if (raw > 100) label = `Exceeded Target (${raw}%)`;
+  else if (raw === 100) label = "Target Completed";
+  else if (raw === 0) label = "Not Started";
+  else label = `${raw}% Achieved`;
+
   return {
     rawProgressPercentage: raw,
-    displayProgressPercentage: Math.min(100, raw)
+    displayProgressPercentage: Math.min(100, raw),
+    progressStatusLabel: label,
   };
 }
 
@@ -423,11 +439,13 @@ export function CheckInClient({ userId }: { userId: string }) {
       );
       next[index].rawProgressPercentage = newProgress.rawProgressPercentage;
       next[index].displayProgressPercentage = newProgress.displayProgressPercentage;
+      next[index].progressStatusLabel = newProgress.progressStatusLabel;
       // Auto status
       if (newProgress.rawProgressPercentage > 100) next[index].status = "exceeded";
       else if (newProgress.rawProgressPercentage === 100) next[index].status = "completed";
       else if (newProgress.rawProgressPercentage >= 50) next[index].status = "on_track";
       else if (newProgress.rawProgressPercentage > 0) next[index].status = "at_risk";
+      else next[index].status = "not_started";
 
       return next;
     });
@@ -474,6 +492,7 @@ export function CheckInClient({ userId }: { userId: string }) {
           if (data.data.rawProgressPercentage !== undefined) {
             next[index].rawProgressPercentage = data.data.rawProgressPercentage;
             next[index].displayProgressPercentage = data.data.displayProgressPercentage;
+            next[index].progressStatusLabel = data.data.progressStatusLabel;
             next[index].status = data.data.status;
           }
           return next;

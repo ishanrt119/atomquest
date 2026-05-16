@@ -205,9 +205,9 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           <div className="w-24">
                             <div className="flex justify-between text-xs mb-1">
                               <span>Progress</span>
-                              <span className="font-bold">{field.progressPercentage ?? 0}%</span>
+                              <span className="font-bold">{field.rawProgressPercentage ?? 0}%</span>
                             </div>
-                            <Progress value={field.progressPercentage ?? 0} className="h-1.5" />
+                            <Progress value={field.displayProgressPercentage ?? 0} className="h-1.5" />
                           </div>
                         </div>
                       </div>

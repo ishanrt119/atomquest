@@ -66,7 +66,7 @@ export function ManagerClient({
   const reviewedCheckins = checkins.filter((c) => c.managerReviewed);
   const pendingReview = submittedCheckins.filter((c) => !c.managerReviewed);
 
-  // Avg progress from real CheckIn progressPercentage
+  // Avg progress from real CheckIn rawProgressPercentage
   const avgProgress =
     submittedCheckins.length === 0
       ? 0
