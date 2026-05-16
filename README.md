@@ -81,10 +81,10 @@ graph TD
     
     RoleNav["Role-Based Navigation\n(/employee, /manager)"]
 
-    UserAction -->|Triggers| NotificationGen
-    NotificationGen -->|Saves & Resolves Priority| DB
-    DB -.->|Polls Every 30s| BellDropdown
-    BellDropdown -->|On Click| RoleNav
+    UserAction -->|"Triggers"| NotificationGen
+    NotificationGen -->|"Saves and Resolves Priority"| DB
+    DB -.-|"Polls Every 30s"| BellDropdown
+    BellDropdown -->|"On Click"| RoleNav
 ```
 
 - `GET /api/notifications` - Fetch latest unread/read notifications for the logged-in user.
@@ -105,11 +105,11 @@ graph TD
     CalcEngine["Progress Calculation Engine"]
     ManagerReview["Manager Review Dashboard"]
 
-    System -->|Returns Q1/Q2/Q3/Q4 Window| EmployeeDashboard
-    EmployeeDashboard -->|Inputs Actual Achievement| CalcEngine
-    CalcEngine -->|Dynamically parses UoM (Numeric, Timeline, Zero, %)| EmployeeDashboard
-    EmployeeDashboard -->|Saves Draft / Submits| ManagerReview
-    ManagerReview -->|Adds Structured Comment & Approves| EmployeeDashboard
+    System -->|"Returns Q1/Q2/Q3/Q4 Window"| EmployeeDashboard
+    EmployeeDashboard -->|"Inputs Actual Achievement"| CalcEngine
+    CalcEngine -->|"Dynamically parses UoM: Numeric, Timeline, Zero"| EmployeeDashboard
+    EmployeeDashboard -->|"Saves Draft / Submits"| ManagerReview
+    ManagerReview -->|"Adds Structured Comment and Approves"| EmployeeDashboard
 ```
 
 ### 2. Supported Progress Calculation (UoM Engine)
