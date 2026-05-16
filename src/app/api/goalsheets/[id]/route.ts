@@ -4,6 +4,8 @@ import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { verifyJWT } from "@/lib/auth";
 import { createAuditLog } from "@/services/audit";
+import { createNotification } from "@/services/notification";
+import { User } from "@/models/User";
 
 async function getSession(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
@@ -61,6 +63,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         newValue: "submitted",
       });
 
+      // Notify Manager
+      const employee = await User.findById(sheet.employeeId);
+      if (employee && employee.managerId) {
+        await createNotification({
+          recipientId: employee.managerId,
+          senderId: session.userId,
+          type: "goal_submitted",
+          title: "Goal Sheet Submitted",
+          message: `${employee.name} has submitted their ${sheet.quarter} goals for review.`,
+          priority: "medium",
+          link: "/manager/approvals"
+        });
+      }
+
     } else if (action === "approve") {
       if (session.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       
@@ -82,6 +98,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         newValue: { status: "approved", locked: true },
       });
 
+      // Notify Employee
+      await createNotification({
+        recipientId: sheet.employeeId,
+        senderId: session.userId,
+        type: "goal_approved",
+        title: "Goals Approved",
+        message: `Your ${sheet.quarter} goal sheet has been approved and locked.`,
+        priority: "high",
+        link: "/employee"
+      });
+
     } else if (action === "reject") {
       if (session.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       if (!rejectionReason) return NextResponse.json({ error: "Rejection reason required" }, { status: 400 });
@@ -97,6 +124,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         changedBy: session.userId,
         oldValue: oldStatus,
         newValue: "rejected",
+      });
+
+      // Notify Employee
+      await createNotification({
+        recipientId: sheet.employeeId,
+        senderId: session.userId,
+        type: "goal_rejected",
+        title: "Goals Returned",
+        message: `Your manager returned your ${sheet.quarter} goal sheet: "${rejectionReason}"`,
+        priority: "urgent",
+        link: "/employee/goals"
       });
 
     } else if (action === "unlock") {
@@ -117,6 +155,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         oldValue: { status: oldStatus, locked: true },
         newValue: { status: "draft", locked: false },
       });
+
+      // Notify Employee
+      await createNotification({
+        recipientId: sheet.employeeId,
+        senderId: session.userId,
+        type: "admin_unlock",
+        title: "Goal Sheet Unlocked",
+        message: `Admin has unlocked your ${sheet.quarter} goal sheet. You may now make edits.`,
+        priority: "urgent",
+        link: "/employee/goals"
+      });
+
+      // Notify Manager
+      const employee = await User.findById(sheet.employeeId);
+      if (employee && employee.managerId) {
+        await createNotification({
+          recipientId: employee.managerId,
+          senderId: session.userId,
+          type: "admin_unlock",
+          title: "Goal Sheet Unlocked",
+          message: `Admin unlocked ${employee.name}'s ${sheet.quarter} goal sheet.`,
+          priority: "high",
+        });
+      }
     } else {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

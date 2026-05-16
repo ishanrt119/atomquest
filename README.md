@@ -10,9 +10,9 @@ This repository contains the foundation for the AtomQuest portal. It is built to
 - **[Phase 1] Goal Creation & Employee Dashboard (COMPLETED)**
 - **[Phase 1] Dynamic Manager Dashboard & Approval System (COMPLETED)**
 - **[Phase 1] Real-time Shared Goals Management (COMPLETED)**
+- **[Phase 1] System-wide Notifications & Alerts (COMPLETED)**
 - [Phase 2] Quarterly Check-ins & Continuous Feedback
 - [Phase 3] Advanced Analytics & PDF Exporting
-- [Phase 4] System-wide Notifications & Email Alerts
 
 ---
 
@@ -52,6 +52,32 @@ graph TD
     B -.->|Auto Syncs| D
     B -.->|Auto Syncs| E
 ```
+
+### 3. Notification Architecture & Event Flow
+
+```mermaid
+graph TD
+    UserAction["User Action\n(Submit, Approve, Assign)"]
+    
+    NotificationGen["Notification Generator\n(src/services/notification.ts)"]
+    
+    DB[("MongoDB Notification Collection")]
+    
+    BellDropdown["Bell Icon Dropdown\n(TopNav.tsx)"]
+    
+    RoleNav["Role-Based Navigation\n(/employee, /manager)"]
+
+    UserAction -->|Triggers| NotificationGen
+    NotificationGen -->|Saves & Resolves Priority| DB
+    DB -.->|Polls Every 30s| BellDropdown
+    BellDropdown -->|On Click| RoleNav
+```
+
+#### API Documentation
+- `GET /api/notifications` - Fetch latest unread/read notifications for the logged-in user.
+- `PUT /api/notifications/read-all` - Mark all notifications as read.
+- `PUT /api/notifications/:id/read` - Mark a single notification as read.
+- `DELETE /api/notifications/:id` - Delete a specific notification.
 
 ---
 
@@ -101,7 +127,7 @@ The architecture implements the following robust Mongoose schemas:
 - **CheckIn**: Periodic updates on active goals with manager review hooks.
 - **SharedGoal**: Junction allowing shared progress on cross-departmental tasks. Fully integrated for Admin and Manager creation.
 - **AuditLog**: Immutable historical tracking of all significant changes (Status changes, Locking, Rejections).
-- **Notification**: In-app routing for updates and reminders.
+- **Notification**: Real-time event tracking schema. Fields include `recipientId`, `type`, `title`, `message`, `priority` (`low`, `medium`, `high`, `urgent`), `isRead`, and deep `link` references.
 
 ## Authentication Flow & RBAC
 
@@ -166,4 +192,3 @@ The Next.js application is optimized for deployment on Vercel. Connect your repo
 
 - Build the dynamic OKR alignment engine.
 - Establish the comprehensive Analytics module and detailed Audit Logging integrations.
-- Add real-time notifications for Check-ins and Goal Approvals.

@@ -27,34 +27,16 @@ export default async function EmployeeDashboard() {
   let goals: any[] = [];
   
   if (sheetRaw) {
-    sheet = {
-      ...sheetRaw,
-      _id: sheetRaw._id.toString(),
-      employeeId: sheetRaw.employeeId.toString(),
-    };
+    sheet = JSON.parse(JSON.stringify(sheetRaw));
 
     // Fetch Goals
     const goalsRaw = await Goal.find({ goalSheetId: sheetRaw._id }).lean();
-    goals = goalsRaw.map((g: any) => ({
-      ...g,
-      _id: g._id.toString(),
-      employeeId: g.employeeId.toString(),
-      goalSheetId: g.goalSheetId.toString(),
-      sharedGoalId: g.sharedGoalId?.toString() || null,
-      createdBy: g.createdBy.toString(),
-      updatedBy: g.updatedBy.toString(),
-    }));
+    goals = JSON.parse(JSON.stringify(goalsRaw));
   }
 
   // Fetch Shared Goals assigned to this employee
   const sharedGoalsRaw = await SharedGoal.find({ assignedEmployees: user.id }).lean();
-  const sharedGoals = sharedGoalsRaw.map((sg: any) => ({
-    ...sg,
-    _id: sg._id.toString(),
-    primaryOwnerId: sg.primaryOwnerId.toString(),
-    createdBy: sg.createdBy.toString(),
-    assignedEmployees: sg.assignedEmployees.map((id: any) => id.toString()),
-  }));
+  const sharedGoals = JSON.parse(JSON.stringify(sharedGoalsRaw));
 
   // Fetch recent activity (Audit Logs) involving this user
   const activitiesRaw = await AuditLog.find({ 
@@ -64,12 +46,7 @@ export default async function EmployeeDashboard() {
   .limit(5)
   .lean();
 
-  const activities = activitiesRaw.map((a: any) => ({
-    ...a,
-    _id: a._id.toString(),
-    entityId: a.entityId.toString(),
-    changedBy: a.changedBy.toString(),
-  }));
+  const activities = JSON.parse(JSON.stringify(activitiesRaw));
 
   return (
     <EmployeeClient 

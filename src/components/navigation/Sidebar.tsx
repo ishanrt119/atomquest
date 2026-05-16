@@ -33,6 +33,7 @@ const NAV_CONFIG = {
   admin: [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Shared Goals", href: "/admin/shared-goals", icon: Target },
+    { name: "Teams", href: "/admin/teams", icon: Briefcase },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Goal Cycles", href: "/admin/cycles", icon: Target },
     { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },

@@ -16,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { SessionUser } from "@/lib/session";
 import { MobileDrawer } from "./MobileDrawer";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export function TopNav({ user }: { user: SessionUser }) {
   const router = useRouter();
@@ -58,10 +59,7 @@ export function TopNav({ user }: { user: SessionUser }) {
         </div>
 
         <div className="flex items-center gap-4 ml-auto">
-          <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground hover:text-foreground">
-            <Bell className="size-5" />
-            <span className="absolute top-2 right-2 size-2 bg-destructive rounded-full border-2 border-background" />
-          </Button>
+          <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="relative size-9 rounded-full" />}>

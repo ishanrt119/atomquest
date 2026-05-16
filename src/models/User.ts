@@ -8,6 +8,7 @@ export interface IUser extends Document {
   password?: string;
   role: UserRole;
   departmentId?: string;
+  teamId?: mongoose.Types.ObjectId;
   managerId?: mongoose.Types.ObjectId;
   designation?: string;
   isActive: boolean;
@@ -34,6 +35,7 @@ const UserSchema = new Schema<IUser>(
       default: USER_ROLES.EMPLOYEE 
     },
     departmentId: { type: String },
+    teamId: { type: Schema.Types.ObjectId, ref: "Team" },
     managerId: { type: Schema.Types.ObjectId, ref: "User" },
     designation: { type: String },
     isActive: { type: Boolean, default: true },

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 
 type AuditParams = {
-  entityType: "Goal" | "GoalSheet" | "SharedGoal" | "User";
+  entityType: "Goal" | "GoalSheet" | "SharedGoal" | "User" | "Team" | "TeamAssignment";
   entityId: mongoose.Types.ObjectId | string;
   action: "created" | "updated" | "deleted" | "status_changed" | "locked" | "unlocked";
   changedBy: mongoose.Types.ObjectId | string;

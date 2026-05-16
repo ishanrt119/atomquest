@@ -5,6 +5,7 @@ import { User } from "@/models/User";
 import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { AuditLog } from "@/models/AuditLog";
+import { Team } from "@/models/Team";
 import { redirect } from "next/navigation";
 import { getFinancialYear, getFinancialQuarter } from "@/lib/utils";
 
@@ -21,8 +22,15 @@ export default async function ManagerDashboard() {
   const year = getFinancialYear();
   const quarter = getFinancialQuarter();
 
-  // Fetch real team members from the users collection
-  const employeesRaw = await User.find({ managerId: user.id }).lean();
+  const mongoose = require("mongoose");
+  const managerObjectId = new mongoose.Types.ObjectId(user.id);
+
+  // Fetch team from Team collection first
+  const team = await Team.findOne({ managerId: managerObjectId }).lean();
+  const teamEmployeeIds = team ? team.employeeIds : [];
+
+  // Fetch real team members from the users collection based on Team relationships
+  const employeesRaw = await User.find({ _id: { $in: teamEmployeeIds } }).lean();
   
   // If the user has no managerId matches, fallback to empty array. 
   // (In a real system, you'd ensure seed data sets managerId properly)
@@ -34,23 +42,12 @@ export default async function ManagerDashboard() {
 
   const employeeIds = employees.map((e) => e.id);
 
-  // Fetch all goal sheets for this team
   const goalSheetsRaw = await GoalSheet.find({ employeeId: { $in: employeeIds }, year, quarter }).lean();
-  const goalSheets = goalSheetsRaw.map((s: any) => ({
-    ...s,
-    _id: s._id.toString(),
-    employeeId: s.employeeId.toString()
-  }));
+  const goalSheets = JSON.parse(JSON.stringify(goalSheetsRaw));
 
-  // Fetch all goals for these sheets
-  const sheetIds = goalSheets.map((s) => s._id);
+  const sheetIds = goalSheetsRaw.map((s) => s._id);
   const goalsRaw = await Goal.find({ goalSheetId: { $in: sheetIds } }).lean();
-  const goals = goalsRaw.map((g: any) => ({
-    ...g,
-    _id: g._id.toString(),
-    goalSheetId: g.goalSheetId.toString(),
-    employeeId: g.employeeId.toString(),
-  }));
+  const goals = JSON.parse(JSON.stringify(goalsRaw));
 
   // Fetch recent activities
   const activitiesRaw = await AuditLog.find({ entityId: { $in: sheetIds } })
@@ -58,12 +55,7 @@ export default async function ManagerDashboard() {
     .limit(5)
     .lean();
 
-  const activities = activitiesRaw.map((a: any) => ({
-    ...a,
-    _id: a._id.toString(),
-    entityId: a.entityId.toString(),
-    changedBy: a.changedBy.toString(),
-  }));
+  const activities = JSON.parse(JSON.stringify(activitiesRaw));
 
   return (
     <ManagerClient 

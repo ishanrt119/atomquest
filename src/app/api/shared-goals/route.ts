@@ -5,6 +5,7 @@ import { GoalSheet } from "@/models/GoalSheet";
 import { Goal } from "@/models/Goal";
 import { verifyJWT } from "@/lib/auth";
 import { createAuditLog } from "@/services/audit";
+import { createBulkNotifications } from "@/services/notification";
 import { getFinancialYear, getFinancialQuarter } from "@/lib/utils";
 
 async function getSession(req: NextRequest) {
@@ -108,6 +109,18 @@ export async function POST(req: NextRequest) {
           updatedBy: session.userId,
         });
       }
+
+      // Notify all assigned employees
+      const notifications = assignedEmployees.map((empId: string) => ({
+        recipientId: empId,
+        senderId: session.userId,
+        type: "shared_goal_assigned",
+        title: "New Shared Goal",
+        message: `You have been assigned a new shared goal: "${title}".`,
+        priority: "high",
+        link: "/employee/goals"
+      }));
+      await createBulkNotifications(notifications);
     }
 
     return NextResponse.json({ success: true, data: newSharedGoal }, { status: 201 });

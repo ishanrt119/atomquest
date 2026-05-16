@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
 
 const MOCK_DEPTS = [
   { name: "Engineering", score: 85, active: 45 },
@@ -18,7 +19,20 @@ const MOCK_DEPTS = [
   { name: "Human Resources", score: 88, active: 8 },
 ];
 
-export function AdminClient({ activeEmployeesCount }: { activeEmployeesCount: number }) {
+export function AdminClient({ 
+  metrics,
+  auditLogs 
+}: { 
+  metrics: {
+    activeEmployeesCount: number;
+    activeManagersCount: number;
+    totalTeams: number;
+    pendingApprovals: number;
+    activeGoalSheets: number;
+    sharedGoalsCount: number;
+  };
+  auditLogs: any[];
+}) {
   return (
     <div className="space-y-8 pb-10">
       
@@ -45,10 +59,10 @@ export function AdminClient({ activeEmployeesCount }: { activeEmployeesCount: nu
 
       {/* Global Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Total Active Employees" value={activeEmployeesCount} icon={Building2} delay={0.1} />
-        <MetricCard title="Org. Goal Completion" value="71%" icon={BarChart} delay={0.2} trend="+4.2% YoY" trendUp />
-        <MetricCard title="Pending Final Approvals" value={14} icon={AlertCircle} delay={0.3} trend="Needs Attention" trendUp={false} />
-        <MetricCard title="System API Health" value="99.9%" icon={Activity} delay={0.4} />
+        <MetricCard title="Total Active Employees" value={metrics.activeEmployeesCount} icon={Building2} delay={0.1} />
+        <MetricCard title="Total Teams" value={metrics.totalTeams} icon={BarChart} delay={0.2} />
+        <MetricCard title="Pending Final Approvals" value={metrics.pendingApprovals} icon={AlertCircle} delay={0.3} trend="Needs Attention" trendUp={false} />
+        <MetricCard title="Active Goal Sheets" value={metrics.activeGoalSheets} icon={Activity} delay={0.4} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -99,21 +113,15 @@ export function AdminClient({ activeEmployeesCount }: { activeEmployeesCount: nu
           {/* Audit Logs Preview */}
           <DashboardCard title="System Audit Logs" action={<Button variant="link">Full Log</Button>}>
             <div className="space-y-4 font-mono text-sm">
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-muted-foreground">10:45 AM</span>
-                <span className="flex-1 px-4">User [Admin] modified 'Q3 Cycle Dates'</span>
-                <Badge variant="outline">SYSTEM</Badge>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-muted-foreground">09:12 AM</span>
-                <span className="flex-1 px-4">Goal #482 force-closed by Manager</span>
-                <Badge variant="outline">ACTION</Badge>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">08:00 AM</span>
-                <span className="flex-1 px-4">Automated Backup Completed</span>
-                <Badge variant="outline" className="text-green-600 bg-green-100">SUCCESS</Badge>
-              </div>
+              {auditLogs.length > 0 ? auditLogs.map((log) => (
+                <div key={log._id} className="flex justify-between items-center py-2 border-b last:border-0">
+                  <span className="text-muted-foreground">{format(new Date(log.timestamp), "hh:mm a")}</span>
+                  <span className="flex-1 px-4">{log.entityType} was {log.action}</span>
+                  <Badge variant="outline">{log.action.toUpperCase()}</Badge>
+                </div>
+              )) : (
+                <div className="py-4 text-center text-muted-foreground">No recent audit logs</div>
+              )}
             </div>
           </DashboardCard>
 
