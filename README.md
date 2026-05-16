@@ -17,8 +17,8 @@ This repository contains the foundation for the AtomQuest portal. It is built to
 
 - **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
 - **UI Architecture**: Shadcn UI, Framer Motion, Lucide React
-- **Backend Architecture**: Prepared for Node.js / Express integration
-- **Database Architecture**: Prepared for MongoDB
+- **Backend Architecture**: Next.js API Routes (Serverless)
+- **Database Architecture**: MongoDB Atlas with Mongoose ODM
 
 ## Architecture Diagram
 
@@ -32,50 +32,37 @@ graph TD
         APIRoutes["Next.js API Routes / Actions"]
     end
     
-    subgraph ExternalServices [External Integrations]
-        Auth["Authentication Provider\n(Custom JWT / Role-based)"]
-    end
-
-    subgraph Backend [Node.js Express Backend Layer]
-        Controller["Express Controllers"]
-        Services["Business Logic / Goal Engine"]
-        Models["Mongoose Models"]
+    subgraph DataAccess [Database Layer]
+        Mongoose["Mongoose ODM Models\n(User, Goal, CheckIn, etc.)"]
+        Connection["Singleton Connection Utility"]
     end
     
-    DB[(MongoDB Database)]
+    DB[(MongoDB Atlas)]
 
     Client --> UI
     UI <--> State
     UI --> APIRoutes
-    APIRoutes --> Controller
-    Controller --> Services
-    Services --> Models
-    Models --> DB
-    APIRoutes --> Auth
+    APIRoutes --> Connection
+    Connection --> Mongoose
+    Mongoose --> DB
 ```
 
-## Folder Structure
-
-```
-src/
- ├── app/             # Next.js App Router (Pages, Layouts)
- ├── components/      # React Components
- │    ├── ui/         # Shadcn reusable UI components
- │    ├── landing/    # Landing page specific components
- │    ├── auth/       # Authentication specific components
- │    └── shared/     # Shared layouts and components
- ├── lib/             # Utility functions and core configurations
- ├── constants/       # App-wide static configurations
- ├── store/           # State management hooks
- ├── services/        # External API communication functions
- ├── types/           # TypeScript generic type definitions
-```
+## Database Schema Overview
+The architecture implements the following robust Mongoose schemas:
+- **User**: Captures identity, roles (employee, manager, admin), and relationships.
+- **Goal**: Core entity tracking targets, thrust areas, and quarterly weightings.
+- **GoalSheet**: Container linking multiple goals to a specific quarter/year for an employee.
+- **CheckIn**: Periodic updates on active goals with manager review hooks.
+- **SharedGoal**: Junction allowing shared progress on cross-departmental tasks.
+- **AuditLog**: Immutable historical tracking of all significant changes.
+- **Notification**: In-app routing for updates and reminders.
 
 ## Setup Instructions
 
 ### Prerequisites
 - Node.js 18+
 - npm or yarn or pnpm
+- A MongoDB Atlas Cluster URL
 
 ### Run Locally
 
@@ -84,23 +71,25 @@ src/
    ```bash
    cp .env.example .env.local
    ```
-3. Install dependencies:
+3. Update `.env.local` with your secure MongoDB connection string:
+   ```
+   MONGODB_URI=mongodb+srv://<username>:<password>@cluster...
+   ```
+4. Install dependencies:
    ```bash
    npm install
    ```
-4. Start the development server:
+5. Start the development server:
    ```bash
    npm run dev
    ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Test the database connection by visiting `http://localhost:3000/api/test-db`.
 
 ## Deployment Instructions
 
 ### Frontend (Vercel)
-The Next.js application is optimized for deployment on Vercel. Connect your repository to Vercel and it will automatically configure the build settings.
-
-### Backend (Render/Railway)
-The Node.js Express backend can be deployed via Render or Railway using standard Docker or Node.js environments. Remember to supply your MongoDB connection string in the production environment.
+The Next.js application is optimized for deployment on Vercel. Connect your repository to Vercel, ensure you provide the `MONGODB_URI` environment variable, and it will automatically configure the build settings.
 
 ## Future Roadmap
 
