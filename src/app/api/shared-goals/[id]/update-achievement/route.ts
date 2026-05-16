@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Trigger sync engine
     const host = req.headers.get("host");
     const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-    
+
     // Fire and forget the sync to prevent blocking the UI
     fetch(`${protocol}://${host}/api/shared-goal-sync/${id}`, {
       method: "POST",

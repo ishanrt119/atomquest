@@ -23,14 +23,15 @@ export async function GET(req: NextRequest) {
 
     const query: any = {};
     if (session.role === "employee") {
-      query.assignedEmployees = session.userId;
+      query.participatingEmployeeIds = session.userId;
     } else if (session.role === "manager") {
       query.$or = [{ createdBy: session.userId }, { primaryOwnerId: session.userId }];
     }
 
     const sharedGoals = await SharedGoal.find(query)
       .populate("primaryOwnerId", "name email")
-      .populate("assignedEmployees", "name email")
+      .populate("participatingEmployeeIds", "name email")
+      .populate("teamId", "teamName")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!session || session.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
-    const { title, description, thrustArea, target, targetDate, uomType = "numeric", measurementDirection = "max", assignedEmployees, primaryOwnerId } = body;
+    const { title, description, thrustArea, target, targetDate, uomType = "numeric", measurementDirection = "max", participatingEmployeeIds, primaryOwnerId, teamId } = body;
 
     if (!title || !target || !primaryOwnerId) {
       return NextResponse.json({ error: "Title, target, and primaryOwnerId are required" }, { status: 400 });
@@ -62,8 +63,10 @@ export async function POST(req: NextRequest) {
       measurementDirection,
       targetValue: target,
       targetDate: targetDate ? new Date(targetDate) : undefined,
-      assignedEmployees: assignedEmployees || [],
+      participatingEmployeeIds: participatingEmployeeIds || [],
       primaryOwnerId,
+      teamId,
+      assignedByRole: session.role === "admin" ? "admin" : "manager",
       createdBy: session.userId,
       linkedGoalIds: [],
     });
@@ -78,14 +81,12 @@ export async function POST(req: NextRequest) {
 
     // Cascade: Create matching Goal entries for assigned employees
     // Note: We assign them an initial weightage of 10. The employee must adjust their own sheet to equal 100%.
-    if (assignedEmployees && assignedEmployees.length > 0) {
+    if (participatingEmployeeIds && participatingEmployeeIds.length > 0) {
       const year = getFinancialYear();
       const quarter = getFinancialQuarter(); // Current quarter
 
-      // Ensure primaryOwner is in the list to receive a goal too, if they are an employee.
-      // Wait, primaryOwner could be a manager. But if they are an employee, they need a goal.
-      // Let's just create a goal for primary owner too, if they are not in assignedEmployees.
-      const allEmployeesToAssign = [...new Set([...assignedEmployees, primaryOwnerId])];
+      // Ensure primaryOwner is in the list to receive a goal too
+      const allEmployeesToAssign = [...new Set([...participatingEmployeeIds, primaryOwnerId])];
       const linkedGoalIds = [];
 
       for (const empId of allEmployeesToAssign) {
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
       await newSharedGoal.save();
 
       // Notify all assigned employees
-      const notifications = assignedEmployees.map((empId: string) => ({
+      const notifications = participatingEmployeeIds.map((empId: string) => ({
         recipientId: empId,
         senderId: session.userId,
         type: "shared_goal_assigned",

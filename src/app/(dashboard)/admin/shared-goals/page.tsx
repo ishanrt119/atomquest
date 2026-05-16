@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SharedGoal } from "@/models/SharedGoal";
+import { Team } from "@/models/Team";
 import { User } from "@/models/User";
 import { redirect } from "next/navigation";
 import { SharedGoalsClient } from "./SharedGoalsClient";
@@ -13,7 +14,8 @@ export default async function AdminSharedGoalsPage() {
 
   const sharedGoalsRaw = await SharedGoal.find()
     .populate("primaryOwnerId", "name email")
-    .populate("assignedEmployees", "name email")
+    .populate("participatingEmployeeIds", "name email")
+    .populate("teamId", "teamName")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -22,14 +24,20 @@ export default async function AdminSharedGoalsPage() {
   const sharedGoals = sharedGoalsRaw.map((sg: any) => ({
     ...sg,
     _id: sg._id.toString(),
-    primaryOwnerId: { ...sg.primaryOwnerId, _id: sg.primaryOwnerId._id.toString() },
-    assignedEmployees: sg.assignedEmployees.map((e: any) => ({ ...e, _id: e._id.toString() })),
+    primaryOwnerId: sg.primaryOwnerId ? { ...sg.primaryOwnerId, _id: sg.primaryOwnerId._id.toString() } : null,
+    participatingEmployeeIds: sg.participatingEmployeeIds ? sg.participatingEmployeeIds.map((e: any) => ({ ...e, _id: e._id.toString() })) : [],
+    teamId: sg.teamId ? { ...sg.teamId, _id: sg.teamId._id.toString() } : null,
+    linkedGoalIds: sg.linkedGoalIds ? sg.linkedGoalIds.map((id: any) => id.toString()) : [],
     createdBy: sg.createdBy.toString(),
   }));
 
-  const allEmployees = allEmployeesRaw.map((e: any) => ({
-    ...e,
-    _id: e._id.toString(),
+  const allTeamsRaw = await Team.find().populate("managerId", "name").populate("employeeIds", "name email").lean();
+  const allTeams = allTeamsRaw.map((t: any) => ({
+    ...t,
+    _id: t._id.toString(),
+    managerId: t.managerId ? { ...t.managerId, _id: t.managerId._id.toString() } : null,
+    employeeIds: t.employeeIds.map((e: any) => ({ ...e, _id: e._id.toString() })),
+    createdBy: t.createdBy.toString()
   }));
 
   return (
@@ -41,7 +49,7 @@ export default async function AdminSharedGoalsPage() {
         </p>
       </div>
 
-      <SharedGoalsClient initialSharedGoals={sharedGoals} employees={allEmployees} />
+      <SharedGoalsClient initialSharedGoals={sharedGoals} teams={allTeams} />
     </div>
   );
 }

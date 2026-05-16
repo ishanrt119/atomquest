@@ -4,7 +4,7 @@ import { SharedGoal } from "@/models/SharedGoal";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Users, AlertCircle, Target, TrendingUp, Link as LinkIcon, CheckCircle2 } from "lucide-react";
+import { Users, AlertCircle, Target, TrendingUp, Link as LinkIcon, CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function EmployeeSharedGoalsPage() {
@@ -15,20 +15,23 @@ export default async function EmployeeSharedGoalsPage() {
 
   const sharedGoalsRaw = await SharedGoal.find({
     $or: [
-      { assignedEmployees: user.id },
+      { participatingEmployeeIds: user.id },
       { primaryOwnerId: user.id }
     ]
   })
     .populate("primaryOwnerId", "name email")
-    .populate("assignedEmployees", "name email")
+    .populate("participatingEmployeeIds", "name email")
+    .populate("teamId", "teamName")
     .sort({ createdAt: -1 })
     .lean();
 
   const sharedGoals = sharedGoalsRaw.map((sg: any) => ({
     ...sg,
     _id: sg._id.toString(),
-    primaryOwnerId: { ...sg.primaryOwnerId, _id: sg.primaryOwnerId._id.toString() },
-    assignedEmployees: sg.assignedEmployees.map((e: any) => ({ ...e, _id: e._id.toString() })),
+    primaryOwnerId: sg.primaryOwnerId ? { ...sg.primaryOwnerId, _id: sg.primaryOwnerId._id.toString() } : null,
+    participatingEmployeeIds: sg.participatingEmployeeIds ? sg.participatingEmployeeIds.map((e: any) => ({ ...e, _id: e._id.toString() })) : [],
+    teamId: sg.teamId ? { ...sg.teamId, _id: sg.teamId._id.toString() } : null,
+    linkedGoalIds: sg.linkedGoalIds ? sg.linkedGoalIds.map((id: any) => id.toString()) : [],
     createdBy: sg.createdBy.toString(),
   }));
 
@@ -85,30 +88,39 @@ export default async function EmployeeSharedGoalsPage() {
 
             <div className="mb-6">
               <div className="flex justify-between text-sm mb-2 font-medium">
-                <span>Overall Progress</span>
-                <span>{sg.progressPercentage ?? 0}%</span>
+                <span className="flex items-center gap-2">
+                  Overall Progress
+                  {(sg.rawProgressPercentage ?? 0) > 100 && (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700 ml-2">
+                      Exceeded Target ({sg.rawProgressPercentage}%)
+                    </Badge>
+                  )}
+                </span>
+                <span>{sg.displayProgressPercentage ?? 0}%</span>
               </div>
-              <Progress value={sg.progressPercentage ?? 0} className="h-2" />
+              <Progress value={sg.displayProgressPercentage ?? 0} className="h-2" />
             </div>
 
             <div className="flex justify-between items-center border-t pt-6">
               <div className="flex -space-x-2">
-                {sg.assignedEmployees.slice(0, 5).map((emp: any) => (
+                {sg.participatingEmployeeIds.slice(0, 5).map((emp: any) => (
                   <div key={emp._id} className="size-8 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-xs font-bold text-primary" title={emp.name}>
                     {emp.name.charAt(0)}
                   </div>
                 ))}
-                {sg.assignedEmployees.length > 5 && (
+                {sg.participatingEmployeeIds.length > 5 && (
                   <div className="size-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-bold">
-                    +{sg.assignedEmployees.length - 5}
+                    +{sg.participatingEmployeeIds.length - 5}
                   </div>
                 )}
               </div>
 
-              {sg.primaryOwnerId._id === user.id && (
-                <Badge variant="outline" className="px-3 py-1.5 bg-muted/50 font-medium">
-                  To update progress, please contact your Manager. (Feature rolling out soon)
-                </Badge>
+              {sg.primaryOwnerId?._id === user.id && (
+                <Link href="/employee/check-ins">
+                  <Badge className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer flex items-center gap-1.5">
+                    Update Achievement <ArrowRight className="size-3" />
+                  </Badge>
+                </Link>
               )}
             </div>
           </div>

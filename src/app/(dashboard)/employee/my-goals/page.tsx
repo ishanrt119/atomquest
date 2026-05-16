@@ -28,8 +28,8 @@ export default async function GoalsPage() {
     });
   }
 
-  // Fetch linked goals
-  const goals = await Goal.find({ goalSheetId: sheet._id }).lean();
+  // Fetch linked personal goals only
+  const goals = await Goal.find({ goalSheetId: sheet._id, isSharedGoal: { $ne: true } }).lean();
 
   // Safely serialize Mongoose documents to plain objects for Client Component
   const formattedSheet = JSON.parse(JSON.stringify(sheet));

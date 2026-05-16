@@ -16,7 +16,8 @@ export default async function AdminSharedGoalDetailPage({ params }: { params: Pr
 
   const sharedGoalRaw = await SharedGoal.findById(id)
     .populate("primaryOwnerId", "name email")
-    .populate("assignedEmployees", "name email")
+    .populate("participatingEmployeeIds", "name email")
+    .populate("teamId", "teamName")
     .lean();
 
   if (!sharedGoalRaw) redirect("/admin/shared-goals");
@@ -24,8 +25,10 @@ export default async function AdminSharedGoalDetailPage({ params }: { params: Pr
   const sharedGoal = {
     ...sharedGoalRaw,
     _id: sharedGoalRaw._id.toString(),
-    primaryOwnerId: { ...sharedGoalRaw.primaryOwnerId, _id: sharedGoalRaw.primaryOwnerId._id.toString() },
-    assignedEmployees: sharedGoalRaw.assignedEmployees.map((e: any) => ({ ...e, _id: e._id.toString() })),
+    primaryOwnerId: sharedGoalRaw.primaryOwnerId ? { ...sharedGoalRaw.primaryOwnerId, _id: sharedGoalRaw.primaryOwnerId._id.toString() } : null,
+    participatingEmployeeIds: sharedGoalRaw.participatingEmployeeIds ? sharedGoalRaw.participatingEmployeeIds.map((e: any) => ({ ...e, _id: e._id.toString() })) : [],
+    teamId: sharedGoalRaw.teamId ? { ...sharedGoalRaw.teamId, _id: sharedGoalRaw.teamId._id.toString() } : null,
+    linkedGoalIds: sharedGoalRaw.linkedGoalIds ? sharedGoalRaw.linkedGoalIds.map((id: any) => id.toString()) : [],
     createdBy: sharedGoalRaw.createdBy.toString(),
   };
 

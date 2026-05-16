@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { GoalArrayZodSchema, GoalFormValues } from "@/validations/goals";
 import { DynamicTargetInput } from "./DynamicTargetInput";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: any, initialGoals: any[] }) {
   const [sheet, setSheet] = useState(initialSheet);
@@ -55,7 +56,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
   const handleSaveDraft = async () => {
     setErrorMsg("");
     setSuccessMsg("");
-    
+
     // We get current values (we can save draft even if not perfectly valid, but we must enforce 8 max)
     const currentGoals = methods.getValues("goals");
     if (currentGoals.length > 8) {
@@ -72,7 +73,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      
+
       setSuccessMsg("Draft saved successfully!");
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -84,7 +85,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
   const onSubmit = async (data: GoalFormValues) => {
     setErrorMsg("");
     setSuccessMsg("");
-    
+
     // Client-side validation check before hitting API
     if (totalWeightage !== 100) {
       setErrorMsg(`Total weightage must be exactly 100%. Current is ${totalWeightage}%.`);
@@ -108,7 +109,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "submit" }),
       });
-      
+
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error);
 
@@ -125,7 +126,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
     <TooltipProvider>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pb-20">
-          
+
           {/* Sticky Action Bar */}
           <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-md p-4 border-b -mx-4 md:-mx-8 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -134,12 +135,12 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
               </Badge>
               {isLocked && <Badge variant="outline" className="text-amber-600 bg-amber-50"><Lock className="size-3 mr-1" /> Locked</Badge>}
             </div>
-            
+
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="flex items-center gap-3 w-full md:w-64">
                 <span className="text-sm font-medium whitespace-nowrap">Weightage: {totalWeightage}%</span>
-                <Progress 
-                  value={totalWeightage} 
+                <Progress
+                  value={totalWeightage}
                   className={`h-2 flex-1 ${totalWeightage === 100 ? '[&>div]:bg-green-500' : totalWeightage > 100 ? '[&>div]:bg-red-500' : ''}`}
                 />
               </div>
@@ -175,7 +176,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                 const isShared = watch(`goals.${index}.isSharedGoal`);
 
                 return (
-                  <motion.div 
+                  <motion.div
                     key={field.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -194,7 +195,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                       <div className="mb-4 bg-muted/30 p-3 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-medium">Shared Progress Synced</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Last synced: {new Date(field.syncedAt).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Last synced: {format(new Date(field.syncedAt), "dd/MM/yyyy, HH:mm:ss")}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
@@ -222,7 +223,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      
+
                       {/* Title */}
                       <div className="lg:col-span-2 space-y-2">
                         <Label className="flex items-center gap-1.5">
@@ -237,8 +238,8 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           </Tooltip>
                           {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
-                        <Input 
-                          placeholder="Enter goal title..." 
+                        <Input
+                          placeholder="Enter goal title..."
                           {...register(`goals.${index}.title`)}
                           disabled={isLocked || isShared}
                           className={cn(goalError?.title && "border-destructive")}
@@ -260,7 +261,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           </Tooltip>
                           {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
-                        <select 
+                        <select
                           className={cn(
                             "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                             goalError?.thrustArea && "border-destructive"
@@ -287,10 +288,10 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                             </TooltipContent>
                           </Tooltip>
                         </Label>
-                        <Input 
-                          type="number" 
-                          min="10" 
-                          max="100" 
+                        <Input
+                          type="number"
+                          min="10"
+                          max="100"
                           {...register(`goals.${index}.weightage`)}
                           disabled={isLocked}
                           className={cn(goalError?.weightage && "border-destructive")}
@@ -312,7 +313,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           </Tooltip>
                           {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
-                        <Textarea 
+                        <Textarea
                           placeholder="Provide details about how you will achieve this..."
                           {...register(`goals.${index}.description`)}
                           disabled={isLocked}
@@ -334,7 +335,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           </Tooltip>
                           {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
-                        <select 
+                        <select
                           className={cn(
                             "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                             goalError?.uomType && "border-destructive"
@@ -363,7 +364,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                           </Tooltip>
                           {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
-                        <select 
+                        <select
                           className={cn(
                             "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                             goalError?.measurementDirection && "border-destructive"
@@ -377,10 +378,10 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                       </div>
 
                       {/* Dynamic Target Input */}
-                      <DynamicTargetInput 
-                        index={index} 
-                        uomType={currentUomType as any} 
-                        isLocked={isLocked || isShared} 
+                      <DynamicTargetInput
+                        index={index}
+                        uomType={currentUomType as any}
+                        isLocked={isLocked || isShared}
                       />
 
                     </div>

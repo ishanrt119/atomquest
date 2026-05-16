@@ -1,16 +1,23 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { CHECKIN_STATUSES, CheckInStatus } from "@/constants/database";
 
 export interface ICheckIn extends Document {
   goalId: mongoose.Types.ObjectId;
   employeeId: mongoose.Types.ObjectId;
+  managerId: mongoose.Types.ObjectId;
   quarter: string;
-  plannedTarget?: number;
-  actualAchievement?: number;
-  progressPercentage?: number;
+  plannedTargetValue?: number;
+  plannedTargetDate?: Date;
+  actualAchievementValue?: number;
+  actualAchievementDate?: Date;
+  rawProgressPercentage?: number;
+  displayProgressPercentage?: number;
+  progressScore?: number;
+  status: "not_started" | "at_risk" | "on_track" | "completed" | "exceeded";
   employeeComment?: string;
   managerComment?: string;
-  status: CheckInStatus;
+  checkinSubmitted: boolean;
+  managerReviewed: boolean;
+  reviewedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,18 +25,26 @@ export interface ICheckIn extends Document {
 const CheckInSchema = new Schema<ICheckIn>(
   {
     goalId: { type: Schema.Types.ObjectId, ref: "Goal", required: true, index: true },
-    employeeId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    employeeId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    managerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     quarter: { type: String, required: true },
-    plannedTarget: { type: Number },
-    actualAchievement: { type: Number },
-    progressPercentage: { type: Number, min: 0, max: 100 },
+    plannedTargetValue: { type: Number },
+    plannedTargetDate: { type: Date },
+    actualAchievementValue: { type: Number },
+    actualAchievementDate: { type: Date },
+    rawProgressPercentage: { type: Number, min: 0, default: 0 },
+    displayProgressPercentage: { type: Number, min: 0, max: 100, default: 0 },
+    progressScore: { type: Number },
     employeeComment: { type: String },
     managerComment: { type: String },
-    status: { 
-      type: String, 
-      enum: Object.values(CHECKIN_STATUSES), 
-      default: CHECKIN_STATUSES.DRAFT 
+    status: {
+      type: String,
+      enum: ["not_started", "at_risk", "on_track", "completed", "exceeded"],
+      default: "not_started"
     },
+    checkinSubmitted: { type: Boolean, default: false },
+    managerReviewed: { type: Boolean, default: false },
+    reviewedAt: { type: Date },
   },
   { timestamps: true }
 );

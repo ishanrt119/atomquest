@@ -9,7 +9,7 @@ export interface IGoal extends Document {
   targetValue?: number;
   targetDate?: Date;
   weightage: number;
-  status: "not_started" | "on_track" | "completed";
+  status: "not_started" | "at_risk" | "on_track" | "completed" | "exceeded";
   locked: boolean;
   employeeId: mongoose.Types.ObjectId;
   goalSheetId: mongoose.Types.ObjectId;
@@ -18,7 +18,8 @@ export interface IGoal extends Document {
   isPrimaryOwner: boolean;
   syncedAt?: Date;
   currentAchievement?: number;
-  progressPercentage?: number;
+  rawProgressPercentage?: number;
+  displayProgressPercentage?: number;
   createdBy: mongoose.Types.ObjectId;
   updatedBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -30,8 +31,8 @@ const GoalSchema = new Schema<IGoal>(
     title: { type: String, required: true },
     description: { type: String },
     thrustArea: { type: String },
-    uomType: { 
-      type: String, 
+    uomType: {
+      type: String,
       enum: ["numeric", "percentage", "timeline", "zero"],
       default: "numeric"
     },
@@ -43,26 +44,26 @@ const GoalSchema = new Schema<IGoal>(
     },
     targetValue: {
       type: Number,
-      required: function(this: any) {
+      required: function (this: any) {
         return this.uomType !== "timeline";
       },
     },
     targetDate: {
       type: Date,
-      required: function(this: any) {
+      required: function (this: any) {
         return this.uomType === "timeline";
       },
     },
-    weightage: { 
-      type: Number, 
-      required: true, 
-      min: [10, "Weightage must be at least 10"], 
-      max: [100, "Weightage cannot exceed 100"] 
+    weightage: {
+      type: Number,
+      required: true,
+      min: [10, "Weightage must be at least 10"],
+      max: [100, "Weightage cannot exceed 100"]
     },
-    status: { 
-      type: String, 
-      enum: ["not_started", "on_track", "completed"], 
-      default: "not_started" 
+    status: {
+      type: String,
+      enum: ["not_started", "at_risk", "on_track", "completed", "exceeded"],
+      default: "not_started"
     },
     locked: { type: Boolean, default: false },
     employeeId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -72,7 +73,8 @@ const GoalSchema = new Schema<IGoal>(
     isPrimaryOwner: { type: Boolean, default: false },
     syncedAt: { type: Date },
     currentAchievement: { type: Number },
-    progressPercentage: { type: Number },
+    rawProgressPercentage: { type: Number },
+    displayProgressPercentage: { type: Number },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },

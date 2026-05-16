@@ -19,9 +19,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const NAV_CONFIG = {
   employee: [
     { name: "Dashboard", href: "/employee", icon: LayoutDashboard },
-    { name: "My Goals", href: "/employee/goals", icon: Target },
-    { name: "Check-ins", href: "/employee/check-ins", icon: CheckCircle2 },
+    { name: "My Goals", href: "/employee/my-goals", icon: Target },
     { name: "Shared Goals", href: "/employee/shared-goals", icon: Users },
+    { name: "Check-ins", href: "/employee/check-ins", icon: CheckCircle2 },
     { name: "Performance", href: "/employee/performance", icon: BarChart3 },
   ],
   manager: [

@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 import { AUDIT_ACTIONS, AuditAction } from "@/constants/database";
 
 export interface IAuditLog extends Document {
-  entityType: string; // e.g., 'Goal', 'User', 'GoalSheet'
+  entityType: "User" | "Team" | "Goal" | "GoalSheet" | "SharedGoal" | "TeamAssignment" | "CheckIn";
   entityId: mongoose.Types.ObjectId;
   action: AuditAction;
   changedBy: mongoose.Types.ObjectId;

@@ -28,7 +28,7 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
     setLoading(true);
     setError("");
     setSuccess("");
-    
+
     try {
       const res = await fetch(`/api/shared-goals/${goal._id}/update-achievement`, {
         method: "POST",
@@ -93,7 +93,7 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
         <div className="col-span-1 md:col-span-2 space-y-6">
           <div className="p-6 border rounded-2xl bg-card">
             <h3 className="text-lg font-bold mb-4">Progress Synchronization</h3>
-            
+
             <div className="grid grid-cols-2 gap-6 mb-6">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Target ({goal.uomType})</p>
@@ -119,19 +119,19 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
                   <CheckCircle2 className="size-5 text-emerald-500" />
                   <h4 className="font-semibold">Update Achievement</h4>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>New Achievement Value</Label>
-                    <Input 
-                      type="number" 
-                      value={achievement} 
-                      onChange={e => setAchievement(Number(e.target.value))} 
+                    <Input
+                      type="number"
+                      value={achievement}
+                      onChange={e => setAchievement(Number(e.target.value))}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <select 
+                    <select
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                       value={status}
                       onChange={e => setStatus(e.target.value)}
@@ -177,9 +177,9 @@ export function SharedGoalDetailClient({ goal, currentUser }: { goal: any, curre
               </div>
 
               <div className="pt-4 border-t">
-                <p className="text-xs text-muted-foreground uppercase font-semibold mb-3">Cascaded To ({goal.assignedEmployees.length})</p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold mb-3">Linked Employees ({goal.participatingEmployeeIds?.length || 0})</p>
                 <div className="space-y-3">
-                  {goal.assignedEmployees.map((emp: any) => (
+                  {goal.participatingEmployeeIds?.map((emp: any) => (
                     <div key={emp._id} className="flex items-center gap-2">
                       <div className="size-6 rounded-full bg-muted flex items-center justify-center font-bold text-[10px]">
                         {emp.name.charAt(0)}

@@ -11,7 +11,7 @@ This repository contains the foundation for the AtomQuest portal. It is built to
 - **[Phase 1] Dynamic Manager Dashboard & Approval System (COMPLETED)**
 - **[Phase 1] Real-time Shared Goals Management (COMPLETED)**
 - **[Phase 1] System-wide Notifications & Alerts (COMPLETED)**
-- [Phase 2] Quarterly Check-ins & Continuous Feedback
+- **[Phase 2] Quarterly Check-ins & Continuous Feedback (COMPLETED)**
 - [Phase 3] Advanced Analytics & PDF Exporting
 
 ---
@@ -38,45 +38,34 @@ stateDiagram-v2
     Locked --> Draft: Admin Force Unlocks (Audit Logged)
 ```
 
-### 2. Shared Goals Cascading Engine
+### 3. Enterprise Shared Goals & KPI Syncing
 
 ```mermaid
 graph TD
-    A[Admin/Manager] -->|Creates Shared Goal| B(SharedGoal Entity)
-    B -->|Cascades| C[Goal: Employee 1]
-    B -->|Cascades| D[Goal: Employee 2]
-    B -->|Cascades| E[Goal: Employee N]
+    Admin["Admin"]
+    Manager["Manager"]
+    SharedGoal["Organization / Department Shared Goal"]
+    TeamSelected["Assigned To Specific Team"]
+    PrimaryOwner["Primary Owner (Source of Truth)"]
+    Participating["Linked Participating Employees"]
+    GoalDocs["Individual Goal Documents"]
+
+    Admin -->|Assigns to Team| SharedGoal
+    Manager -->|Assigns to own Team| SharedGoal
+    SharedGoal --> TeamSelected
+    TeamSelected -->|Selects 1 from Team| PrimaryOwner
+    TeamSelected -->|Selects multiple from Team| Participating
     
-    F[Primary Owner] -->|Updates Target/Achievement| B
-    B -.->|Auto Syncs| C
-    B -.->|Auto Syncs| D
-    B -.->|Auto Syncs| E
+    PrimaryOwner --> GoalDocs
+    Participating --> GoalDocs
+    
+    PrimaryOwner -.->|Updates Achievement| SyncEngine["Sync Engine Backend"]
+    SyncEngine -.->|Auto-updates| Participating
 ```
 
-### 3. Shared Goal Sync Engine & Event Flow
-
-```mermaid
-graph TD
-    AdminManager["Admin/Manager"]
-    CreateSharedGoal["Create Shared Goal"]
-    AssignEmployees["Assign Employees"]
-    GenerateLinkedGoals["Generate Linked Goals\n(10% Default Weightage)"]
-    PrimaryOwnerUpdates["Primary Owner Updates\nAchievement"]
-    SyncEngine["Sync Engine\n(bulkWrite)"]
-    UpdateLinked["Update All Linked Goal Sheets\n(achievement, progress, status)"]
-
-    AdminManager --> CreateSharedGoal
-    CreateSharedGoal --> AssignEmployees
-    AssignEmployees --> GenerateLinkedGoals
-    GenerateLinkedGoals --> PrimaryOwnerUpdates
-    PrimaryOwnerUpdates --> SyncEngine
-    SyncEngine --> UpdateLinked
-```
-
-#### API Documentation
-- `POST /api/shared-goals` - Create Shared Goal and cascade Generation of Linked Employee Goals.
-- `POST /api/shared-goals/:id/update-achievement` - Primary owner updates progress.
-- `POST /api/shared-goal-sync/:id` - Sync engine endpoint that triggers bulk updates across the database.
+- `GET/POST /api/shared-goals` - Admin/Manager creation of team-linked shared goals.
+- `PUT /api/shared-goals/:id/update-achievement` - Only executable by the `Primary Owner`. Triggers the `bulkWrite` sync engine.
+- `POST /api/shared-goal-sync/:id` - Internal sync engine propagating actuals to all linked active quarterly check-ins.
 
 ### 4. Notification Architecture & Event Flow
 
@@ -98,11 +87,44 @@ graph TD
     BellDropdown -->|On Click| RoleNav
 ```
 
-#### API Documentation
 - `GET /api/notifications` - Fetch latest unread/read notifications for the logged-in user.
 - `PUT /api/notifications/read-all` - Mark all notifications as read.
 - `PUT /api/notifications/:id/read` - Mark a single notification as read.
 - `DELETE /api/notifications/:id` - Delete a specific notification.
+
+---
+
+## 🚀 Phase 2 Architecture (Implemented)
+
+### 1. Quarterly Check-in & Review Flow
+
+```mermaid
+graph TD
+    System["Active Quarter Engine"]
+    EmployeeDashboard["Employee Check-in UI"]
+    CalcEngine["Progress Calculation Engine"]
+    ManagerReview["Manager Review Dashboard"]
+
+    System -->|Returns Q1/Q2/Q3/Q4 Window| EmployeeDashboard
+    EmployeeDashboard -->|Inputs Actual Achievement| CalcEngine
+    CalcEngine -->|Dynamically parses UoM (Numeric, Timeline, Zero, %)| EmployeeDashboard
+    EmployeeDashboard -->|Saves Draft / Submits| ManagerReview
+    ManagerReview -->|Adds Structured Comment & Approves| EmployeeDashboard
+```
+
+### 2. Supported Progress Calculation (UoM Engine)
+
+The core calculation logic seamlessly interprets progress based on how the goal was originally parameterized:
+- **Min / Percentage**: Progress scales based on maximum limits (e.g. `(Target / Actual) * 100` for cost, or `(Actual / Target) * 100` for revenue).
+- **Timeline**: Returns 100% if completed before target date; deducts scale based on days delayed.
+- **Zero Type**: Assumes binary state. `0 = 100% Success` (e.g., Target: 0 Accidents).
+
+#### API Documentation
+- `GET /api/checkins/active-quarter` - Retrieve the currently enforced Check-in Window based on fiscal year setup.
+- `GET/PUT /api/checkins` - Employee CRUD operations for quarterly drafts.
+- `POST /api/checkins/submit` - Irreversible quarter submission locking the employee form.
+- `POST /api/checkins/review` - Manager route to persist structured comments.
+- `POST /api/progress/calculate` - Independent service routing calculation math.
 
 ---
 
@@ -217,3 +239,58 @@ The Next.js application is optimized for deployment on Vercel. Connect your repo
 
 - Build the dynamic OKR alignment engine.
 - Establish the comprehensive Analytics module and detailed Audit Logging integrations.
+
+---
+
+## 🔄 Phase 2 Sync Architecture — Employee → Manager
+
+### Employee Achievement → Manager Dashboard Data Flow
+
+```mermaid
+sequenceDiagram
+    participant E as Employee
+    participant API as /api/checkins/update-achievement
+    participant DB as MongoDB (CheckIn + Goal)
+    participant Sync as Shared Goal Sync Engine
+    participant M as Manager Dashboard
+
+    E->>API: POST { goalId, actualAchievement, status, quarter }
+    API->>DB: Update Goal.currentAchievement + Goal.status
+    API->>DB: Upsert CheckIn document (create if virtual)
+    API->>DB: CheckIn.progressPercentage = calculated
+    
+    alt isPrimaryOwner && isSharedGoal
+        API->>Sync: POST /api/shared-goal-sync/:id
+        Sync->>DB: Update SharedGoal.currentAchievement
+        Sync->>DB: Sync all linked employee Goal documents
+        Sync->>DB: Sync all linked CheckIn documents
+    end
+
+    M->>API: GET /api/manager/team-checkins?quarter=Q1
+    API->>DB: Find Team by managerId
+    DB-->>API: employeeIds[]
+    API->>DB: CheckIn.find({ employeeId: {$in:...}, quarter })
+    DB-->>API: Latest CheckIn records (populated with Goal + User)
+    API-->>M: { members, checkins, quarter }
+    M->>M: Derive per-employee avgProgress from CheckIn.progressPercentage
+```
+
+### Source of Truth Design
+
+| Data Point | Source Collection | Used By |
+|---|---|---|
+| Employee quarterly progress | `CheckIn.progressPercentage` | Manager Dashboard, Check-in Review |
+| Goal achievement | `Goal.currentAchievement` | Employee Dashboard, Shared Goal Sync |
+| Submission status | `CheckIn.checkinSubmitted` | Manager Review Queue |
+| Review status | `CheckIn.managerReviewed` | Employee feedback panel |
+| Team composition | `Team.employeeIds` | All manager-scoped queries |
+| Org-level KPIs | `SharedGoal` | Admin + Manager shared-goals pages |
+
+### Key Architectural Decisions
+
+- **`CheckIn` is the quarterly source of truth** — the Manager Dashboard reads `CheckIn.progressPercentage`, never `Goal.status` counts.
+- **`Team` collection drives scoping** — all manager queries use `Team.findOne({ managerId })`, not `User.managerId` field, ensuring hierarchy integrity.
+- **Virtual check-ins** — employees without a persisted `CheckIn` get a virtual one generated on the fly from the `Goal` document, which becomes real on first save.
+- **`router.refresh()`** — the Manager Dashboard uses Next.js's `router.refresh()` to re-run the server component and pull fresh MongoDB data without a full page reload.
+- **Shared Goal Primary Owner sync** — when a primary owner saves progress, `/api/checkins/update-achievement` fires a background sync to `shared-goal-sync/:id`, which propagates the achievement to all linked employee `Goal` and `CheckIn` documents.
+

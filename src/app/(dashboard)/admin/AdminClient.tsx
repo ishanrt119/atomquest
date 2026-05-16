@@ -89,7 +89,18 @@ export function AdminClient({
           </DashboardCard>
 
           <DashboardCard title="Company Goal Distribution">
-            <DistributionChart data={[{ name: "Revenue Growth", value: 400 }, { name: "Product Delivery", value: 300 }, { name: "Customer Success", value: 300 }, { name: "Internal Process", value: 200 }]} />
+            <Tabs defaultValue="personal" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="personal">Personal KPIs</TabsTrigger>
+                <TabsTrigger value="shared">Shared Goals</TabsTrigger>
+              </TabsList>
+              <TabsContent value="personal">
+                <DistributionChart data={[{ name: "Revenue Growth", value: 300 }, { name: "Product Delivery", value: 200 }, { name: "Customer Success", value: 400 }, { name: "Internal Process", value: 100 }]} />
+              </TabsContent>
+              <TabsContent value="shared">
+                <DistributionChart data={[{ name: "Cross-functional Strategy", value: 100 }, { name: "Platform Integration", value: 150 }, { name: "Market Expansion", value: 50 }]} />
+              </TabsContent>
+            </Tabs>
           </DashboardCard>
 
           {/* Department Performance Table */}
