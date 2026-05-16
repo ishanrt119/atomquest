@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AtomQuest Goal Setting & Tracking Portal
 
-## Getting Started
+AtomQuest is a premium, enterprise-grade Goal Setting and Tracking Portal designed to modernize employee performance management with real-time KPI tracking and quarterly check-ins. This platform enables employees to set goals, managers to review and approve them, and administrators to gain insights into organizational progress.
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+This repository contains the foundation for the AtomQuest portal. It is built to deliver a highly user-friendly, responsive, and minimalist experience reminiscent of modern SaaS platforms (like Notion, Linear, and Stripe).
+
+### Features
+- **Goal Creation**: Employees can seamlessly create personal and OKR-based goals.
+- **Manager Reviews**: Managers can review, approve, and align goals.
+- **Quarterly Tracking**: Easy check-ins and performance tracking.
+- **Analytics Dashboard**: Insights on organizational performance (planned).
+- **Role-based Authentication**: Secure access for Employees, Managers, and Admins.
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
+- **UI Architecture**: Shadcn UI, Framer Motion, Lucide React
+- **Backend Architecture**: Prepared for Node.js / Express integration
+- **Database Architecture**: Prepared for MongoDB
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    Client["Client / Browser"]
+    
+    subgraph Frontend [Next.js App Router Layer]
+        UI["React UI Components\n(Tailwind, Shadcn)"]
+        State["State Management"]
+        APIRoutes["Next.js API Routes / Actions"]
+    end
+    
+    subgraph ExternalServices [External Integrations]
+        Auth["Authentication Provider\n(Custom JWT / Role-based)"]
+    end
+
+    subgraph Backend [Node.js Express Backend Layer]
+        Controller["Express Controllers"]
+        Services["Business Logic / Goal Engine"]
+        Models["Mongoose Models"]
+    end
+    
+    DB[(MongoDB Database)]
+
+    Client --> UI
+    UI <--> State
+    UI --> APIRoutes
+    APIRoutes --> Controller
+    Controller --> Services
+    Services --> Models
+    Models --> DB
+    APIRoutes --> Auth
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Folder Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+ ├── app/             # Next.js App Router (Pages, Layouts)
+ ├── components/      # React Components
+ │    ├── ui/         # Shadcn reusable UI components
+ │    ├── landing/    # Landing page specific components
+ │    ├── auth/       # Authentication specific components
+ │    └── shared/     # Shared layouts and components
+ ├── lib/             # Utility functions and core configurations
+ ├── constants/       # App-wide static configurations
+ ├── store/           # State management hooks
+ ├── services/        # External API communication functions
+ ├── types/           # TypeScript generic type definitions
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup Instructions
 
-## Learn More
+### Prerequisites
+- Node.js 18+
+- npm or yarn or pnpm
 
-To learn more about Next.js, take a look at the following resources:
+### Run Locally
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Clone the repository and navigate into the project directory.
+2. Copy the example environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment Instructions
 
-## Deploy on Vercel
+### Frontend (Vercel)
+The Next.js application is optimized for deployment on Vercel. Connect your repository to Vercel and it will automatically configure the build settings.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Backend (Render/Railway)
+The Node.js Express backend can be deployed via Render or Railway using standard Docker or Node.js environments. Remember to supply your MongoDB connection string in the production environment.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Future Roadmap
+
+- Fully integrate Employee, Manager, and Admin dashboards.
+- Implement robust JWT Authentication and Route Guards.
+- Build the OKR alignment engine.
+- Establish the comprehensive Analytics module and Audit Logging system.
