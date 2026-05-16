@@ -57,6 +57,31 @@ The architecture implements the following robust Mongoose schemas:
 - **AuditLog**: Immutable historical tracking of all significant changes.
 - **Notification**: In-app routing for updates and reminders.
 
+## Authentication Flow & RBAC
+
+AtomQuest utilizes a robust, Next.js Edge-compatible JWT authentication system secured by MongoDB and `bcryptjs`.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant NextJS_Middleware
+    participant Auth_API
+    participant MongoDB
+
+    User->>Frontend: Enters Email & Password
+    Frontend->>Auth_API: POST /api/auth/login
+    Auth_API->>MongoDB: Fetch user & verify bcrypt hash
+    MongoDB-->>Auth_API: Return User (if match)
+    Auth_API->>Auth_API: Sign JWT with `jose`
+    Auth_API-->>Frontend: Set HTTP-Only Cookie (`auth_token`) + Return 200 OK
+    Frontend->>Frontend: window.location.href = /dashboard
+    Frontend->>NextJS_Middleware: Intercept Route Request
+    NextJS_Middleware->>NextJS_Middleware: Extract & Verify `auth_token`
+    NextJS_Middleware-->>Frontend: Enforce RBAC rules (redirect if unauthorized)
+    Frontend-->>User: Render Authorized Dashboard
+```
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -93,7 +118,6 @@ The Next.js application is optimized for deployment on Vercel. Connect your repo
 
 ## Future Roadmap
 
-- Fully integrate Employee, Manager, and Admin dashboards.
-- Implement robust JWT Authentication and Route Guards.
-- Build the OKR alignment engine.
-- Establish the comprehensive Analytics module and Audit Logging system.
+- Build the dynamic OKR alignment engine.
+- Establish the comprehensive Analytics module and detailed Audit Logging integrations.
+- Add real-time notifications for Check-ins and Goal Approvals.
