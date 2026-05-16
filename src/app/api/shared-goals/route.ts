@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     if (!session || session.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
-    const { title, description, thrustArea, target, assignedEmployees, primaryOwnerId } = body;
+    const { title, description, thrustArea, target, targetDate, uomType = "numeric", measurementDirection = "max", assignedEmployees, primaryOwnerId } = body;
 
     if (!title || !target || !primaryOwnerId) {
       return NextResponse.json({ error: "Title, target, and primaryOwnerId are required" }, { status: 400 });
@@ -58,10 +58,14 @@ export async function POST(req: NextRequest) {
       title,
       description,
       thrustArea,
-      target,
+      uomType,
+      measurementDirection,
+      targetValue: target,
+      targetDate: targetDate ? new Date(targetDate) : undefined,
       assignedEmployees: assignedEmployees || [],
       primaryOwnerId,
       createdBy: session.userId,
+      linkedGoalIds: [],
     });
 
     await createAuditLog({
@@ -78,7 +82,13 @@ export async function POST(req: NextRequest) {
       const year = getFinancialYear();
       const quarter = getFinancialQuarter(); // Current quarter
 
-      for (const empId of assignedEmployees) {
+      // Ensure primaryOwner is in the list to receive a goal too, if they are an employee.
+      // Wait, primaryOwner could be a manager. But if they are an employee, they need a goal.
+      // Let's just create a goal for primary owner too, if they are not in assignedEmployees.
+      const allEmployeesToAssign = [...new Set([...assignedEmployees, primaryOwnerId])];
+      const linkedGoalIds = [];
+
+      for (const empId of allEmployeesToAssign) {
         // Find their active goal sheet or create a draft one
         let sheet = await GoalSheet.findOne({ employeeId: empId, year, quarter });
         if (!sheet) {
@@ -91,24 +101,34 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        await Goal.create({
+        const isOwner = empId.toString() === primaryOwnerId.toString();
+
+        const goal = await Goal.create({
           title,
           description,
           thrustArea,
-          target,
+          targetValue: target,
+          targetDate: targetDate ? new Date(targetDate) : undefined,
           weightage: 10, // Default minimum weightage, employee can adjust
-          uomType: "numeric",
-          measurementDirection: "max",
+          uomType,
+          measurementDirection,
           status: "not_started",
           locked: false, // Not locked until sheet is approved, but title/target are locked by UI
           employeeId: empId,
           goalSheetId: sheet._id,
           isSharedGoal: true,
           sharedGoalId: newSharedGoal._id,
+          isPrimaryOwner: isOwner,
           createdBy: session.userId,
           updatedBy: session.userId,
         });
+
+        linkedGoalIds.push(goal._id);
       }
+
+      // Update SharedGoal with linked goals
+      newSharedGoal.linkedGoalIds = linkedGoalIds;
+      await newSharedGoal.save();
 
       // Notify all assigned employees
       const notifications = assignedEmployees.map((empId: string) => ({

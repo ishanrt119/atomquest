@@ -15,6 +15,10 @@ export interface IGoal extends Document {
   goalSheetId: mongoose.Types.ObjectId;
   isSharedGoal: boolean;
   sharedGoalId?: mongoose.Types.ObjectId;
+  isPrimaryOwner: boolean;
+  syncedAt?: Date;
+  currentAchievement?: number;
+  progressPercentage?: number;
   createdBy: mongoose.Types.ObjectId;
   updatedBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -65,6 +69,10 @@ const GoalSchema = new Schema<IGoal>(
     goalSheetId: { type: Schema.Types.ObjectId, ref: "GoalSheet", required: true, index: true },
     isSharedGoal: { type: Boolean, default: false },
     sharedGoalId: { type: Schema.Types.ObjectId, ref: "SharedGoal" },
+    isPrimaryOwner: { type: Boolean, default: false },
+    syncedAt: { type: Date },
+    currentAchievement: { type: Number },
+    progressPercentage: { type: Number },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },

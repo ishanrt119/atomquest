@@ -166,7 +166,10 @@ export function SharedGoalsClient({ initialSharedGoals, employees }: { initialSh
                 <h4 className="text-lg font-bold">{sg.title}</h4>
                 <p className="text-sm text-muted-foreground mt-1">{sg.description}</p>
               </div>
-              <Badge variant="outline" className="border-blue-500 text-blue-500"><LinkIcon className="size-3 mr-1" /> Cascaded</Badge>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="border-blue-500 text-blue-500"><LinkIcon className="size-3 mr-1" /> Cascaded</Badge>
+                <Button variant="outline" size="sm" onClick={() => window.location.href = `/manager/shared-goals/${sg._id}`}>View Details</Button>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">

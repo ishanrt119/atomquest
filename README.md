@@ -53,7 +53,32 @@ graph TD
     B -.->|Auto Syncs| E
 ```
 
-### 3. Notification Architecture & Event Flow
+### 3. Shared Goal Sync Engine & Event Flow
+
+```mermaid
+graph TD
+    AdminManager["Admin/Manager"]
+    CreateSharedGoal["Create Shared Goal"]
+    AssignEmployees["Assign Employees"]
+    GenerateLinkedGoals["Generate Linked Goals\n(10% Default Weightage)"]
+    PrimaryOwnerUpdates["Primary Owner Updates\nAchievement"]
+    SyncEngine["Sync Engine\n(bulkWrite)"]
+    UpdateLinked["Update All Linked Goal Sheets\n(achievement, progress, status)"]
+
+    AdminManager --> CreateSharedGoal
+    CreateSharedGoal --> AssignEmployees
+    AssignEmployees --> GenerateLinkedGoals
+    GenerateLinkedGoals --> PrimaryOwnerUpdates
+    PrimaryOwnerUpdates --> SyncEngine
+    SyncEngine --> UpdateLinked
+```
+
+#### API Documentation
+- `POST /api/shared-goals` - Create Shared Goal and cascade Generation of Linked Employee Goals.
+- `POST /api/shared-goals/:id/update-achievement` - Primary owner updates progress.
+- `POST /api/shared-goal-sync/:id` - Sync engine endpoint that triggers bulk updates across the database.
+
+### 4. Notification Architecture & Event Flow
 
 ```mermaid
 graph TD

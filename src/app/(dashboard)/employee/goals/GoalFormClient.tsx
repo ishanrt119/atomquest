@@ -183,8 +183,32 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                     className={`p-6 rounded-2xl border bg-card relative ${isShared ? 'border-blue-500/30 bg-blue-50/30' : ''}`}
                   >
                     {isShared && (
-                      <div className="absolute -top-3 -right-2">
-                        <Badge className="bg-blue-500 text-white">Shared Goal</Badge>
+                      <div className="absolute -top-3 -right-2 flex gap-2">
+                        <Badge className="bg-blue-500 text-white shadow-sm flex items-center gap-1.5 px-3">
+                          <Lock className="size-3" /> Managed by Shared Goal
+                        </Badge>
+                      </div>
+                    )}
+
+                    {isShared && field.syncedAt && (
+                      <div className="mb-4 bg-muted/30 p-3 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">Shared Progress Synced</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Last synced: {new Date(field.syncedAt).toLocaleString()}</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground uppercase font-semibold">Achievement</p>
+                            <p className="font-bold">{field.currentAchievement ?? 0}</p>
+                          </div>
+                          <div className="w-24">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Progress</span>
+                              <span className="font-bold">{field.progressPercentage ?? 0}%</span>
+                            </div>
+                            <Progress value={field.progressPercentage ?? 0} className="h-1.5" />
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -211,6 +235,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                               <p className="w-48 text-xs font-normal">A short, clear name for what you want to achieve.</p>
                             </TooltipContent>
                           </Tooltip>
+                          {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
                         <Input 
                           placeholder="Enter goal title..." 
@@ -233,6 +258,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                               <p className="w-48 text-xs font-normal">The high-level strategic category this goal falls under.</p>
                             </TooltipContent>
                           </Tooltip>
+                          {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
                         <select 
                           className={cn(
@@ -284,6 +310,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                               <p className="w-48 text-xs font-normal">Detailed steps or context on how you will accomplish this goal.</p>
                             </TooltipContent>
                           </Tooltip>
+                          {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
                         <Textarea 
                           placeholder="Provide details about how you will achieve this..."
@@ -305,6 +332,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                               <p className="w-48 text-xs font-normal">Unit of Measurement. How the target is tracked (e.g., as a raw number or percentage).</p>
                             </TooltipContent>
                           </Tooltip>
+                          {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
                         <select 
                           className={cn(
@@ -333,6 +361,7 @@ export function GoalFormClient({ initialSheet, initialGoals }: { initialSheet: a
                               <p className="w-48 text-xs font-normal">Whether a higher number is better (Maximize) or a lower number is better (Minimize).</p>
                             </TooltipContent>
                           </Tooltip>
+                          {isShared && <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-2 py-0.5 rounded border">Read-only</span>}
                         </Label>
                         <select 
                           className={cn(

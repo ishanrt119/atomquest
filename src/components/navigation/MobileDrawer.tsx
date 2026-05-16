@@ -15,11 +15,13 @@ const NAV_CONFIG = {
     { name: "Dashboard", href: "/employee", icon: LayoutDashboard },
     { name: "My Goals", href: "/employee/goals", icon: Target },
     { name: "Check-ins", href: "/employee/check-ins", icon: CheckCircle2 },
+    { name: "Shared Goals", href: "/employee/shared-goals", icon: Users },
   ],
   manager: [
     { name: "Dashboard", href: "/manager", icon: LayoutDashboard },
     { name: "Team Goals", href: "/manager/team-goals", icon: Target },
     { name: "Approvals", href: "/manager/approvals", icon: CheckCircle2 },
+    { name: "Shared Goals", href: "/manager/shared-goals", icon: Target },
   ],
   admin: [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },

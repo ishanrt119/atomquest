@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  BarChart3, 
-  Briefcase, 
-  CheckCircle2, 
-  LayoutDashboard, 
-  Settings, 
-  ShieldCheck, 
-  Target, 
-  Users 
+import {
+  BarChart3,
+  Briefcase,
+  CheckCircle2,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Target,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,7 +21,7 @@ const NAV_CONFIG = {
     { name: "Dashboard", href: "/employee", icon: LayoutDashboard },
     { name: "My Goals", href: "/employee/goals", icon: Target },
     { name: "Check-ins", href: "/employee/check-ins", icon: CheckCircle2 },
-    { name: "Shared Goals", href: "/employee/shared", icon: Users },
+    { name: "Shared Goals", href: "/employee/shared-goals", icon: Users },
     { name: "Performance", href: "/employee/performance", icon: BarChart3 },
   ],
   manager: [
@@ -43,7 +43,7 @@ const NAV_CONFIG = {
 
 export function Sidebar({ userRole }: { userRole: "employee" | "manager" | "admin" }) {
   const pathname = usePathname();
-  
+
   const links = NAV_CONFIG[userRole];
 
   return (
@@ -57,7 +57,7 @@ export function Sidebar({ userRole }: { userRole: "employee" | "manager" | "admi
           <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{userRole}</span>
         </div>
       </div>
-      
+
       <ScrollArea className="flex-1 px-4 py-2">
         <div className="space-y-1.5">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
@@ -71,8 +71,8 @@ export function Sidebar({ userRole }: { userRole: "employee" | "manager" | "admi
                 href={link.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
-                  isActive 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
