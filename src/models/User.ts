@@ -11,6 +11,11 @@ export interface IUser extends Document {
   teamId?: mongoose.Types.ObjectId;
   managerId?: mongoose.Types.ObjectId;
   designation?: string;
+  onboardingStatus: "invited" | "active" | "disabled";
+  invitedBy?: mongoose.Types.ObjectId;
+  invitedAt?: Date;
+  lastLogin?: Date;
+  passwordResetRequired: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,7 +33,7 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       index: true
     },
-    password: { type: String, select: false }, // Prevent returning password in queries by default
+    password: { type: String, select: false },
     role: { 
       type: String, 
       enum: Object.values(USER_ROLES), 
@@ -38,6 +43,15 @@ const UserSchema = new Schema<IUser>(
     teamId: { type: Schema.Types.ObjectId, ref: "Team" },
     managerId: { type: Schema.Types.ObjectId, ref: "User" },
     designation: { type: String },
+    onboardingStatus: {
+      type: String,
+      enum: ["invited", "active", "disabled"],
+      default: "active"
+    },
+    invitedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    invitedAt: { type: Date },
+    lastLogin: { type: Date },
+    passwordResetRequired: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

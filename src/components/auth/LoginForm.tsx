@@ -50,9 +50,11 @@ export function LoginForm() {
 
       setSuccess(`Welcome back, ${data.user.name}! Redirecting...`);
 
-      // Redirect based on role
+      // Redirect based on role or password reset required
       setTimeout(() => {
-        if (data.user.role === "admin") {
+        if (data.user.passwordResetRequired) {
+          window.location.href = "/change-password";
+        } else if (data.user.role === "admin") {
           window.location.href = "/admin";
         } else if (data.user.role === "manager") {
           window.location.href = "/manager";

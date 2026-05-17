@@ -36,6 +36,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.onboardingStatus === "disabled" || !user.isActive) {
+      return NextResponse.json(
+        { success: false, error: "Account disabled. Please contact your administrator." },
+        { status: 403 }
+      );
+    }
+
     // Generate JWT
     const token = await signJWT({
       userId: user._id.toString(),
@@ -43,12 +50,12 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
-    // Strip password from the response object
     const userWithoutPassword = {
       id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      passwordResetRequired: user.passwordResetRequired,
     };
 
     const response = NextResponse.json(

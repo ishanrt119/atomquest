@@ -353,3 +353,39 @@ graph TD
 - **Real-Time Completion Dashboard**: Provides managers and leadership with immediate visibility into department participation, identifying pending and overdue check-ins instantly.
 - **Immutable Audit Trail (`AuditLog` Schema)**: Every state mutation (targets, weightages, approvals, admin overrides) is captured permanently. It logs the actor, old value, new value, exact timestamp, and the required override reason.
 - **Lock Date Governance**: Post-lock modifications are structurally restricted and require administrative overrides which are forcefully tracked in the Audit Log.
+
+---
+
+## 🔐 Phase 5 Architecture: Enterprise IAM & Onboarding System
+
+### Admin Provisioning & Automated Invitation Flow
+
+```mermaid
+graph TD
+    Admin["Admin"]
+    CreateUser["POST /api/users/create"]
+    Hash["bcrypt Password Hash"]
+    DB[("MongoDB User Collection")]
+    Mail["Nodemailer Service"]
+    Employee["Employee / Manager"]
+    Login["Login Gateway"]
+    ForceReset["Force Password Reset"]
+    Activate["Account Activated"]
+
+    Admin -->|Provisions User| CreateUser
+    CreateUser --> Hash
+    Hash -->|Sets passwordResetRequired = true| DB
+    DB -->|Triggers| Mail
+    Mail -->|Emails Credentials| Employee
+    Employee --> Login
+    Login -->|Detects Reset Flag| ForceReset
+    ForceReset -->|Updates Hash| Activate
+```
+
+### Key Components
+
+- **Admin-Exclusive Provisioning**: Self-registration is completely disabled. Only Admin accounts have access to the User Provisioning dashboard to create new Employee and Manager accounts.
+- **Real-Time Email Credentials**: Upon user creation, the system dynamically generates a temporary password and immediately dispatches a branded HTML email using `Nodemailer` containing login instructions.
+- **First-Login Security Enforcement**: The login gateway intercepts newly provisioned accounts where `passwordResetRequired === true`. Instead of redirecting to their dashboard, users are forced to a secure `Change Password` portal featuring real-time password strength validation.
+- **Centralized User Management**: Admins have full control over the lifecycle of an account. The dashboard supports one-click `Disable/Activate` toggles and the ability to instantly resend onboarding invitations to pending users.
+
