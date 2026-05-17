@@ -1,14 +1,20 @@
 import { AuditLog } from "@/models/AuditLog";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
+import { AuditAction } from "@/constants/database";
 
-type AuditParams = {
-  entityType: "Goal" | "GoalSheet" | "SharedGoal" | "User" | "Team" | "TeamAssignment" | "CheckIn";
+export type AuditParams = {
+  userId: mongoose.Types.ObjectId | string;
+  userRole: string;
+  actionType: AuditAction;
+  entityType: string;
   entityId: mongoose.Types.ObjectId | string;
-  action: "created" | "updated" | "deleted" | "status_changed" | "locked" | "unlocked";
-  changedBy: mongoose.Types.ObjectId | string;
+  fieldChanged?: string;
   oldValue?: any;
   newValue?: any;
+  reason?: string;
+  ipAddress?: string;
+  userAgent?: string;
 };
 
 export async function createAuditLog(params: AuditParams) {
@@ -16,16 +22,20 @@ export async function createAuditLog(params: AuditParams) {
     await connectToDatabase();
     
     await AuditLog.create({
+      userId: params.userId,
+      userRole: params.userRole,
+      actionType: params.actionType,
       entityType: params.entityType,
       entityId: params.entityId,
-      action: params.action,
-      changedBy: params.changedBy,
+      fieldChanged: params.fieldChanged,
       oldValue: params.oldValue,
       newValue: params.newValue,
+      reason: params.reason,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
     });
     
   } catch (error) {
-    // We log it but typically don't throw to prevent crashing the main transaction
     console.error("[AuditLog Service] Failed to create audit log:", error);
   }
 }

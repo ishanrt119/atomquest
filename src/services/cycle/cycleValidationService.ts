@@ -32,11 +32,13 @@ export const createCycle = async (data: Partial<IGoalCycle>, userId: string) => 
   await newCycle.save();
 
   await AuditLog.create({
-    action: "CREATE",
-    entity: "GoalCycle",
-    entityId: newCycle._id,
     userId: new mongoose.Types.ObjectId(userId),
-    details: `Created new goal cycle for year ${newCycle.cycleYear}`,
+    userRole: "admin",
+    actionType: "CREATED",
+    entityType: "GoalCycle",
+    entityId: newCycle._id,
+    newValue: newCycle.toObject(),
+    reason: `Created new goal cycle for year ${newCycle.cycleYear}`,
   });
 
   return newCycle;
@@ -50,11 +52,14 @@ export const updateCycle = async (id: string, data: Partial<IGoalCycle>, userId:
   await cycle.save();
 
   await AuditLog.create({
-    action: "UPDATE",
-    entity: "GoalCycle",
-    entityId: cycle._id,
     userId: new mongoose.Types.ObjectId(userId),
-    details: `Updated goal cycle for year ${cycle.cycleYear}`,
+    userRole: "admin",
+    actionType: "UPDATED",
+    entityType: "GoalCycle",
+    entityId: cycle._id,
+    fieldChanged: "cycle configuration",
+    newValue: data,
+    reason: `Updated goal cycle for year ${cycle.cycleYear}`,
   });
 
   return cycle;
@@ -68,11 +73,14 @@ export const activateCycle = async (id: string, userId: string) => {
   if (!cycle) throw new Error("Cycle not found");
 
   await AuditLog.create({
-    action: "UPDATE",
-    entity: "GoalCycle",
-    entityId: cycle._id,
     userId: new mongoose.Types.ObjectId(userId),
-    details: `Activated goal cycle for year ${cycle.cycleYear}`,
+    userRole: "admin",
+    actionType: "UPDATED",
+    entityType: "GoalCycle",
+    entityId: cycle._id,
+    fieldChanged: "isActive",
+    newValue: true,
+    reason: `Activated goal cycle for year ${cycle.cycleYear}`,
   });
 
   return cycle;
@@ -87,11 +95,14 @@ export const applyAdminOverride = async (id: string, overrideData: IGoalCycle["a
   await cycle.save();
 
   await AuditLog.create({
-    action: "UPDATE",
-    entity: "GoalCycle",
-    entityId: cycle._id,
     userId: new mongoose.Types.ObjectId(userId),
-    details: `Applied admin override on cycle ${cycle.cycleYear}. Reason: ${overrideData?.reason || 'None'}`,
+    userRole: "admin",
+    actionType: "ADMIN_OVERRIDE",
+    entityType: "GoalCycle",
+    entityId: cycle._id,
+    fieldChanged: "adminOverride",
+    newValue: overrideData,
+    reason: overrideData?.reason || 'None',
   });
 
   return cycle;

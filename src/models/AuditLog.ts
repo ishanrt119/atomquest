@@ -2,28 +2,36 @@ import mongoose, { Document, Schema } from "mongoose";
 import { AUDIT_ACTIONS, AuditAction } from "@/constants/database";
 
 export interface IAuditLog extends Document {
-  entityType: "User" | "Team" | "Goal" | "GoalSheet" | "SharedGoal" | "TeamAssignment" | "CheckIn";
+  userId: mongoose.Types.ObjectId;
+  userRole: string;
+  actionType: AuditAction;
+  entityType: string;
   entityId: mongoose.Types.ObjectId;
-  action: AuditAction;
-  changedBy: mongoose.Types.ObjectId;
+  fieldChanged?: string;
   oldValue?: any;
   newValue?: any;
-  timestamp: Date;
+  reason?: string;
+  changedAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 const AuditLogSchema = new Schema<IAuditLog>(
   {
-    entityType: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    userRole: { type: String, required: true },
+    actionType: { type: String, enum: Object.values(AUDIT_ACTIONS), required: true, index: true },
+    entityType: { type: String, required: true, index: true },
     entityId: { type: Schema.Types.ObjectId, required: true, index: true },
-    action: { type: String, enum: Object.values(AUDIT_ACTIONS), required: true },
-    changedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    fieldChanged: { type: String },
     oldValue: { type: Schema.Types.Mixed }, // Mixed type allows storing flexible object states
     newValue: { type: Schema.Types.Mixed },
-    timestamp: { type: Date, default: Date.now },
+    reason: { type: String },
+    changedAt: { type: Date, default: Date.now },
+    ipAddress: { type: String },
+    userAgent: { type: String },
   },
   { 
-    // Audit logs shouldn't technically need full timestamps as timestamp field is enough,
-    // but Mongoose timestamps will automatically maintain createdAt and updatedAt.
     timestamps: true 
   }
 );

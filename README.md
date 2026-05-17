@@ -324,3 +324,32 @@ graph TD
 - **Admin Overrides**: Administrators can apply a temporary override to reopen a specific phase globally or for targeted employees (audit-logged).
 - **Auto Transitions**: No manual switching. As time progresses, the system automatically advances the state to the current active window.
 
+---
+
+## 📊 Phase 4 Architecture: Governance & Enterprise Reporting
+
+### Complete Audit & Reporting Data Flow
+
+```mermaid
+graph TD
+    EmployeeUpdate["Employee / Manager Update"]
+    CheckInSubmission["CheckIn / Goal Modified"]
+    CompletionDashboardUpdate["Real-time Completion Dashboard Update"]
+    AuditLogGeneration["Immutable Audit Log Generation"]
+    ReportingAggregation["MongoDB Aggregation Pipeline"]
+    CSVExcelExport["CSV / Excel Export Generation"]
+
+    EmployeeUpdate --> CheckInSubmission
+    CheckInSubmission --> CompletionDashboardUpdate
+    CheckInSubmission -->|"If modified post-lock"| AuditLogGeneration
+    CompletionDashboardUpdate -.-> ReportingAggregation
+    AuditLogGeneration -.-> ReportingAggregation
+    ReportingAggregation --> CSVExcelExport
+```
+
+### Key Components
+
+- **Enterprise Reporting Engine**: Backend-driven CSV and Excel generation using `json2csv` and `ExcelJS`. Relies on MongoDB `$lookup` aggregation pipelines to join Goals, CheckIns, Users, and Teams on the fly without heavy frontend processing.
+- **Real-Time Completion Dashboard**: Provides managers and leadership with immediate visibility into department participation, identifying pending and overdue check-ins instantly.
+- **Immutable Audit Trail (`AuditLog` Schema)**: Every state mutation (targets, weightages, approvals, admin overrides) is captured permanently. It logs the actor, old value, new value, exact timestamp, and the required override reason.
+- **Lock Date Governance**: Post-lock modifications are structurally restricted and require administrative overrides which are forcefully tracked in the Audit Log.
