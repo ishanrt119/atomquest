@@ -294,3 +294,33 @@ sequenceDiagram
 - **`router.refresh()`** — the Manager Dashboard uses Next.js's `router.refresh()` to re-run the server component and pull fresh MongoDB data without a full page reload.
 - **Shared Goal Primary Owner sync** — when a primary owner saves progress, `/api/checkins/update-achievement` fires a background sync to `shared-goal-sync/:id`, which propagates the achievement to all linked employee `Goal` and `CheckIn` documents.
 
+---
+
+## 🎯 Phase 3 Architecture: Goal Cycle Management System
+
+### Active Quarter & Window Enforcement Engine
+
+```mermaid
+graph TD
+    CurrentDate["Current Date"]
+    ActiveQuarterService["Active Quarter Service"]
+    WindowValidation["Window Validation Service"]
+    RBAC["Role Access Control"]
+    UILock["UI Lock/Unlock State"]
+    SubmissionFlow["Quarter Submission Flow"]
+
+    CurrentDate -->|"Evaluates Date vs Cycle"| ActiveQuarterService
+    ActiveQuarterService -->|"Determines Active Phase"| WindowValidation
+    WindowValidation -->|"Enforces Window Constraints"| RBAC
+    RBAC -->|"Disables/Enables Actions"| UILock
+    UILock -->|"Employee/Manager Acts"| SubmissionFlow
+```
+
+### Key Components
+
+- **Database-Driven Cycles**: Admin configures a specific `GoalCycle` with discrete dates for Goal Setting, Q1, Q2, Q3, and Q4 windows.
+- **Active Quarter Service**: Determines dynamically on the backend what the current cycle status is (`GOAL_SETTING`, `Q1`, `Q2`, `Q3`, `Q4`, or `LOCKED`).
+- **Strict Backend Enforcement**: `Window Validation Service` blocks API routes outside of authorized windows. For example, check-ins cannot be saved if the window is closed.
+- **Admin Overrides**: Administrators can apply a temporary override to reopen a specific phase globally or for targeted employees (audit-logged).
+- **Auto Transitions**: No manual switching. As time progresses, the system automatically advances the state to the current active window.
+
