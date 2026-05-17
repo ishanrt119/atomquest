@@ -134,7 +134,7 @@ The core calculation logic seamlessly interprets progress based on how the goal 
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
+- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS
 - **UI Architecture**: Shadcn UI, Framer Motion, Lucide React
 - **Backend Architecture**: Next.js API Routes (Serverless)
 - **Database Architecture**: MongoDB Atlas with Mongoose ODM

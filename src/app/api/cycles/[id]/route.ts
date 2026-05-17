@@ -4,24 +4,25 @@ import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/mongodb";
 import { GoalCycle } from "@/models/GoalCycle";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getCurrentUser();
     if (!session || session.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const data = await request.json();
     const { action, ...cycleData } = data;
     await connectToDatabase();
 
     let result;
     if (action === "ACTIVATE") {
-      result = await activateCycle(params.id, session.id);
+      result = await activateCycle(id, session.id);
     } else if (action === "OVERRIDE") {
-      result = await applyAdminOverride(params.id, cycleData.adminOverride, session.id);
+      result = await applyAdminOverride(id, cycleData.adminOverride, session.id);
     } else {
-      result = await updateCycle(params.id, cycleData, session.id);
+      result = await updateCycle(id, cycleData, session.id);
     }
 
     return NextResponse.json(result);
@@ -31,15 +32,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getCurrentUser();
     if (!session || session.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     await connectToDatabase();
-    await GoalCycle.findByIdAndDelete(params.id);
+    await GoalCycle.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
